@@ -78,28 +78,28 @@ function imInitLayer(im: InteractiveMap) {
 	}
 }
 
-function imGridShift(im: InteractiveMap, xn: number, yn: number) {
-	if (xn === 0 && yn === 0) return;
+function imGridShift(im: InteractiveMap, nx: number, ny: number) {
+	if (nx === 0 && ny === 0) return;
 
 	const rows = gridRows(im);
 	const cols = gridCols(im);
 
-	im.state.x += xn;
-	im.state.y += yn;
+	im.state.x += nx;
+	im.state.y += ny;
 
-	if (Math.abs(xn) >= cols || Math.abs(yn) >= rows) {
+	if (Math.abs(nx) >= cols || Math.abs(ny) >= rows) {
 		imInitLayer(im);
 		return;
 	}
 
-	im.canvasCtx.drawImage(im.canvas, -xn * im.tileProvider.width, -yn * im.tileProvider.height);
+	im.canvasCtx.drawImage(im.canvas, -nx * im.tileProvider.width, -ny * im.tileProvider.height);
 
 	for (let j = 0; j < rows; ++j) {
-		const jo = j + yn;
-		const rowIsNew = jo < 0 || jo >= rows;
+		const oj = j + ny;
+		const rowIsNew = oj < 0 || oj >= rows;
 		for (let i = 0; i < cols; ++i) {
-			const io = i + xn;
-			const colIsNew = io < 0 || io >= cols;
+			const oi = i + nx;
+			const colIsNew = oi < 0 || oi >= cols;
 			if (rowIsNew || colIsNew) {
 				imDrawCell(im, i, j);
 			}
@@ -107,13 +107,15 @@ function imGridShift(im: InteractiveMap, xn: number, yn: number) {
 	}
 }
 
-function imSlide(im: InteractiveMap, x_off: number, y_off: number) {
-	const [y_tiles_off, y_rem] = intDiv(y_off, im.tileProvider.height);
-	const [x_tiles_off, x_rem] = intDiv(x_off, im.tileProvider.width);
+function imSlide(im: InteractiveMap, dx: number, dy: number) {
+	im.view.x += dx;
+	im.view.y += dy;
 
-	if (Math.abs(x_off) > im.view.width || Math.abs(y_off) > im.view.height) {
-		imInitLayer(im);
-	} else {
-		im.canvasCtx.drawImage(im.canvas, x_off, y_off);
-	}
+	const [nx] = intDiv(im.view.x - im.tileProvider.width, im.tileProvider.width);
+	const [ny] = intDiv(im.view.y - im.tileProvider.height, im.tileProvider.height);
+
+	im.view.x -= nx * im.tileProvider.width;
+	im.view.y -= ny * im.tileProvider.height;
+
+	imGridShift(im, nx, ny);
 }
