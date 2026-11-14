@@ -1,4 +1,4 @@
-import type { State, View, InteractiveMap, TileProvider } from "./interactive-map.ts"
+// import type { State, View, InteractiveMap, TileProvider } from "./interactive-map.ts"
 // import {  } from "./interactive-map.ts"
 
 const TREK_MARS_EQ = "https://trek.nasa.gov/tiles/Mars/EQ";
@@ -81,41 +81,53 @@ async function fetchWMTSCapabilities(productId: any): Promise<WMTSCapabilities> 
 
 
 
+type TileKey = string
+const tileKey = (x: number, y: number, z: number): TileKey => `${z}/${x}/${y}`
+
 type CachedTileProvider = {
     width: number,
     height: number,
     capabilities: WMTSCapabilities,
 
-    pending: Set<[number, number, number]>,
-    cache: Map<[number, number, number], ImageBitmap | null>,
+    pending: Set<TileKey>,
+    cache: Map<TileKey, ImageBitmap | null>,
 
     get: (x: number, y: number, z: number) => ImageBitmap | null
 }
-async function loadTile(cache: Map<[number, number, number], ImageBitmap | null>, capabilities: WMTSCapabilities, x: number, y: number, z: number) {
+async function loadTile(cache: Map<TileKey, ImageBitmap | null>, pending: Set<TileKey>, capabilities: WMTSCapabilities, onLoad: ((x: number, y: number, z: number) => void) | undefined, x: number, y: number, z: number) {
+    const key = tileKey(x, y, z)
     const url = capabilities.template
         .replaceAll("{Style}", capabilities.style)
         .replaceAll("{TileMatrixSet}", capabilities.matrixSet)
         .replaceAll("{TileMatrix}", String(z))
         .replaceAll("{TileRow}", String(y))
         .replaceAll("{TileCol}", String(x))
-    const response = await fetch(url)
-    if (!response.ok) {
-        cache.set([x, y, z], null)
-        console.log("Couldnt load tile! ", response.status)
-    } else {
-        const image = await createImageBitmap(await response.blob())
-        cache.set([x, y, z], image)
-        console.log("Tile loaded successfuly! ", image)
+
+    let tile: ImageBitmap | null = null
+    try {
+        const response = await fetch(url)
+        if (!response.ok) {
+            console.log("Couldnt load tile! ", response.status)
+        } else {
+            tile = await createImageBitmap(await response.blob())
+            console.log("Tile loaded successfuly! ", tile)
+        }
+    } catch (error) {
+        console.log("Couldnt load tile! ", error)
     }
+
+    cache.set(key, tile)
+    pending.delete(key)
+    onLoad?.(x, y, z)
 }
-async function createCachedTileProviderFor(productId: string): Promise<CachedTileProvider> {
+async function createCachedTileProviderFor(productId: string, onLoad?: (x: number, y: number, z: number) => void): Promise<CachedTileProvider> {
     const capabilities = await fetchWMTSCapabilities(productId)
 
     const width = capabilities.tile_size[0]
     const height = capabilities.tile_size[1]
 
-    const pending = new Set<[number, number, number]>()
-    const cache = new Map<[number, number, number], ImageBitmap | null>()
+    const pending = new Set<TileKey>()
+    const cache = new Map<TileKey, ImageBitmap | null>()
 
     return {
         width: width,
@@ -124,11 +136,12 @@ async function createCachedTileProviderFor(productId: string): Promise<CachedTil
         pending: pending,
         cache: cache,
         get: (x, y, z) => {
-            const hit = cache.get([x, y, z])
+            const key = tileKey(x, y, z)
+            const hit = cache.get(key)
             if (hit !== undefined) return hit;
-            if (!pending.has([x, y, z])) {
-                pending.add([x, y, z])
-                void loadTile(cache, capabilities, x, y, z)
+            if (!pending.has(key)) {
+                pending.add(key)
+                void loadTile(cache, pending, capabilities, onLoad, x, y, z)
             }
             return null
         }
@@ -136,12 +149,6 @@ async function createCachedTileProviderFor(productId: string): Promise<CachedTil
 }
 
 
-async function testCachedTileProvider() {
-    const provider = await createCachedTileProviderFor("Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw");
-    provider.get(0, 0, 0);
-}
-
-
-// void fetchWMTSCapabilities("Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw").then(console.log, console.error);
-void testCachedTileProvider()
+export type { CachedTileProvider }
+export { createCachedTileProviderFor }
 

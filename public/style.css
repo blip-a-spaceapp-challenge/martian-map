@@ -1,0 +1,44 @@
+/* External file on purpose: the page CSP allows style-src 'self' only,
+   so an inline <style> block would be blocked. */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #111;
+  color: #fff;
+  font-family: system-ui, sans-serif;
+}
+
+/* Clip the oversized canvas; the map only shows part of it. */
+#viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+
+#viewport.dragging {
+  cursor: grabbing;
+}
+
+/* The canvas is a large surface moved around with a CSS transform. */
+#viewport .map-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+
+#hud {
+  position: fixed;
+  left: 8px;
+  top: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 70%);
+  font: 12px/1.4 monospace;
+  pointer-events: none;
+  white-space: pre;
+}
