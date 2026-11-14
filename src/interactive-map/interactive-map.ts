@@ -49,7 +49,7 @@ function createInteractiveMap(tileProvider: TileProvider, view: View): Interacti
 
 function initLayer(im: InteractiveMap, z: number) {
 	for (let i = 0; i < im.canvas.height;) {
-		for (let i = 0; i < im.canvas.width;) {
+		for (let j = 0; j < im.canvas.width;) {
 
 		}
 	}
