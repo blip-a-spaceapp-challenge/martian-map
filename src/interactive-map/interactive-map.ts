@@ -5,7 +5,7 @@ type MapState = {
 };
 
 type MapData = {
-
+	tiles: ImageBitmap[],
 };
 
 type InteractiveMap = {
