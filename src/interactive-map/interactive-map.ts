@@ -30,9 +30,11 @@ type TileProvider = {
 // Use parent.appendChild(mapName.canvas) to add to DOM.
 function createInteractiveMap(tileProvider: TileProvider, view: View): InteractiveMap | null {
 	const canvas = document.createElement("canvas");
+
+	// tile only partially inside view should still fully fit in canvas, from both sides
 	canvas.height = view.h + tileProvider.h * 2;
 	canvas.width = view.w + tileProvider.w * 2;
-	
+
 	const canvasCtx = canvas.getContext("2d");
 	if (canvasCtx == null) {
 		return null;
@@ -48,8 +50,8 @@ function createInteractiveMap(tileProvider: TileProvider, view: View): Interacti
 }
 
 function initLayer(im: InteractiveMap, z: number) {
-	for (let i = 0; i < im.canvas.height;) {
-		for (let j = 0; j < im.canvas.width;) {
+	for (let i = im.view.h / 2; i < im.canvas.height;) {
+		for (let j = im.view.w / 2; j < im.canvas.width;) {
 
 		}
 	}
