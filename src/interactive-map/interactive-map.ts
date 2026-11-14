@@ -53,7 +53,7 @@ function createInteractiveMap(tileProvider: TileProvider, view: View): Interacti
 
 const intDiv = (a: number, b: number): [number, number] => {
 	const q = Math.floor(a / b);
-	return [a / b, a - q * b];
+	return [q, a - q * b];
 }
 
 const gridCols = (im: InteractiveMap): number => Math.ceil(im.canvas.width / im.tileProvider.width);
