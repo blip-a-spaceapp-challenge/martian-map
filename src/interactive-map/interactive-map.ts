@@ -24,7 +24,7 @@ type InteractiveMap = {
 type TileProvider = {
 	width: number,
 	height: number,
-	get: (x: number, y: number, z: number) => ImageBitmap,
+	get: (x: number, y: number, z: number) => ImageBitmap | null,
 }
 
 // createInteractiveMap - creates InteractiveMap.
@@ -59,8 +59,11 @@ const gridCols = (im: InteractiveMap): number => Math.ceil(im.canvas.width / im.
 const gridRows = (im: InteractiveMap): number => Math.ceil(im.canvas.height / im.tileProvider.height);
 
 function imDrawCell(im: InteractiveMap, i: number, j: number) {
+	const tile = im.tileProvider.get(im.state.x + i, im.state.y + j, im.state.z);
+	if (tile == null) return;
+
 	im.canvasCtx.drawImage(
-		im.tileProvider.get(im.state.x + i, im.state.y + j, im.state.z),
+		tile,
 		i * im.tileProvider.width,
 		j * im.tileProvider.height,
 	);
