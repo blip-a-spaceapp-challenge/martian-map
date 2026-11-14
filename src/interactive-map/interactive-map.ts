@@ -33,8 +33,8 @@ function createInteractiveMap(tileProvider: TileProvider, view: View): Interacti
 	const canvas = document.createElement("canvas");
 
 	// tile only partially inside view should still fully fit in canvas, from both sides
-	canvas.height = view.height + tileProvider.height * 2;
-	canvas.width = view.width + tileProvider.width * 2;
+	canvas.height = (Math.ceil(view.height / tileProvider.height) + 2) * tileProvider.height;
+	canvas.width = (Math.ceil(view.width / tileProvider.width) + 2) * tileProvider.width;
 
 	const canvasCtx = canvas.getContext("2d");
 	if (canvasCtx == null) {
@@ -76,6 +76,10 @@ function imInitLayer(im: InteractiveMap) {
 			imDrawCell(im, i, j);
 		}
 	}
+}
+
+function imJumpTo(im: InteractiveMap, x: number, y: number, z: number) {
+
 }
 
 function imGridShift(im: InteractiveMap, nx: number, ny: number) {
