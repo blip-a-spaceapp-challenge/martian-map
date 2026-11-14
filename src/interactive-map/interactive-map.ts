@@ -15,6 +15,8 @@ type View = {
 type InteractiveMap = {
 	canvas: HTMLCanvasElement,
 	canvasCtx: CanvasRenderingContext2D,
+	resCanvas: HTMLCanvasElement,
+	resCanvasCtx: CanvasRenderingContext2D,
 	state: State,
 	view: View,
 
@@ -27,23 +29,35 @@ type TileProvider = {
 	get: (x: number, y: number, z: number) => ImageBitmap | null,
 }
 
+function createCanvas(width: number, height: number): HTMLCanvasElement {
+	const canvas = document.createElement("canvas");
+
+	canvas.width = width;
+	canvas.height = height;
+
+	return canvas;
+}
+
 // createInteractiveMap - creates InteractiveMap.
 // Use parent.appendChild(mapName.canvas) to add to DOM.
 function createInteractiveMap(tileProvider: TileProvider, view: View): InteractiveMap | null {
-	const canvas = document.createElement("canvas");
-
 	// tile only partially inside view should still fully fit in canvas, from both sides
-	canvas.height = (Math.ceil(view.height / tileProvider.height) + 2) * tileProvider.height;
-	canvas.width = (Math.ceil(view.width / tileProvider.width) + 2) * tileProvider.width;
+	const canvas = createCanvas(
+		(Math.ceil(view.width / tileProvider.width) + 2) * tileProvider.width,
+		(Math.ceil(view.height / tileProvider.height) + 2) * tileProvider.height);
+	const resCanvas = createCanvas(canvas.width, canvas.height);
 
 	const canvasCtx = canvas.getContext("2d");
-	if (canvasCtx == null) {
+	const resCanvasCtx = resCanvas.getContext("2d");
+	if (canvasCtx == null || resCanvasCtx == null) {
 		return null;
 	}
 
 	return {
 		canvas,
 		canvasCtx,
+		resCanvas,
+		resCanvasCtx,
 		state: { x: NaN, y: NaN, z: NaN },
 		view,
 		tileProvider,
@@ -80,12 +94,24 @@ function imInitLayer(im: InteractiveMap) {
 	}
 }
 
-function imJumpTo(im: InteractiveMap, x: number, y: number, z: number) {
+function imJumpTo(im: InteractiveMap, x: number, y: number, z: number, c: number = 2) {
+	const s = c ** (z - im.state.z);
+	if (s !== 1 && Number.isFinite(s)) {
+		im.resCanvasCtx.clearRect(0, 0, im.resCanvas.width, im.resCanvas.height);
+		im.resCanvasCtx.drawImage(im.canvas, 0, 0);
+
+		const ox = (im.state.x * s - x) * im.tileProvider.width;
+		const oy = (im.state.y * s - y) * im.tileProvider.height;
+
+		im.canvasCtx.clearRect(0, 0, im.canvas.width, im.canvas.height);
+		im.canvasCtx.drawImage(im.resCanvas, ox, oy, im.resCanvas.width * s, im.resCanvas.height * s);
+	}
 	im.state.x = x;
 	im.state.y = y;
 	im.state.z = z;
 	im.view.x = im.tileProvider.width;
 	im.view.y = im.tileProvider.height;
+
 	imInitLayer(im);
 }
 
