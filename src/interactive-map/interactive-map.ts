@@ -1,3 +1,4 @@
+// refers to top-left tile index
 type MapState = {
 	x: number,
 	y: number,
@@ -7,8 +8,8 @@ type MapState = {
 type View = {
 	x: number,
 	y: number,
-	w: number,
-	h: number,
+	width: number,
+	height: number,
 }
 
 type InteractiveMap = {
@@ -21,8 +22,8 @@ type InteractiveMap = {
 };
 
 type TileProvider = {
-	w: number,
-	h: number,
+	width: number,
+	height: number,
 	get: (x: number, y: number, z: number) => ImageBitmap,
 }
 
@@ -32,8 +33,8 @@ function createInteractiveMap(tileProvider: TileProvider, view: View): Interacti
 	const canvas = document.createElement("canvas");
 
 	// tile only partially inside view should still fully fit in canvas, from both sides
-	canvas.height = view.h + tileProvider.h * 2;
-	canvas.width = view.w + tileProvider.w * 2;
+	canvas.height = view.height + tileProvider.height * 2;
+	canvas.width = view.width + tileProvider.width * 2;
 
 	const canvasCtx = canvas.getContext("2d");
 	if (canvasCtx == null) {
@@ -49,10 +50,15 @@ function createInteractiveMap(tileProvider: TileProvider, view: View): Interacti
 	};
 }
 
-function initLayer(im: InteractiveMap, z: number) {
-	for (let i = im.view.h / 2; i < im.canvas.height;) {
-		for (let j = im.view.w / 2; j < im.canvas.width;) {
+function initLayer(im: InteractiveMap) {
+	let y_off = im.view.height / 2;
+	let x_off = im.view.width / 2;
 
+	for (let y = 0; y_off < im.view.height; ++y) {
+		for (let x = im.state.x; x_off < im.view.width; ++x) {
+			im.canvasCtx.drawImage(im.tileProvider.get(x, y, im.state.z), x_off, y_off);
+			x_off += im.tileProvider.width;
 		}
+		y_off += im.tileProvider.height;
 	}
 } 
