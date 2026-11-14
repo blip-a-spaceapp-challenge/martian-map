@@ -4,11 +4,13 @@
     <meta charset="UTF-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://trek.nasa.gov; img-src 'self' data: https://trek.nasa.gov https://astro.arcgis.com"
     />
     <title>Martian Map</title>
   </head>
   <body>
     <h1>Martian Map</h1>
+    <script type="module" src="./js/interactive-map/interactive-map.js"></script>
+    <script type="module" src="./js/interactive-map/mars-trek.js"></script>
   </body>
 </html>

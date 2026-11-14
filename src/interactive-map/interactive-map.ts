@@ -130,3 +130,9 @@ function imSlide(im: InteractiveMap, dx: number, dy: number) {
 
 	imGridShift(im, nx, ny);
 }
+
+
+
+export type { State, View, InteractiveMap, TileProvider };
+export { createInteractiveMap, imJumpTo, imGridShift, imSlide, intDiv };
+
