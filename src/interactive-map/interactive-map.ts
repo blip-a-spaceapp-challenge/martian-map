@@ -50,22 +50,32 @@ function createInteractiveMap(tileProvider: TileProvider, view: View): Interacti
 	};
 }
 
-function imInitLayer(im: InteractiveMap) {
-	let y_off = im.view.height / 2;
-	let x_off = im.view.width / 2;
-
-	for (let y = 0; y_off < im.view.height; ++y) {
-		for (let x = im.state.x; x_off < im.view.width; ++x) {
-			im.canvasCtx.drawImage(im.tileProvider.get(x, y, im.state.z), x_off, y_off);
-			x_off += im.tileProvider.width;
-		}
-		y_off += im.tileProvider.height;
-	}
-}
 
 const intDiv = (a: number, b: number): [number, number] => {
 	const q = Math.floor(a / b);
 	return [a / b, a - q * b];
+}
+
+const gridCols = (im: InteractiveMap): number => Math.ceil(im.canvas.width / im.tileProvider.width);
+const gridRows = (im: InteractiveMap): number => Math.ceil(im.canvas.height / im.tileProvider.height);
+
+function imDrawCell(im: InteractiveMap, i: number, j: number) {
+	im.canvasCtx.drawImage(
+		im.tileProvider.get(im.state.x + i, im.state.y + j, im.state.z),
+		i * im.tileProvider.width,
+		j * im.tileProvider.height,
+	);
+}
+
+function imInitLayer(im: InteractiveMap) {
+	const rows = gridRows(im);
+	const cols = gridCols(im);
+
+	for (let j = 0; j < rows; ++j) {
+		for (let i = 0; i < cols; ++i) {
+			imDrawCell(im, i, j);
+		}
+	}
 }
 
 function imSlide(im: InteractiveMap, x_off: number, y_off: number) {
