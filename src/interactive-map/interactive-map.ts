@@ -79,7 +79,12 @@ function imInitLayer(im: InteractiveMap) {
 }
 
 function imJumpTo(im: InteractiveMap, x: number, y: number, z: number) {
-
+	im.state.x = x;
+	im.state.y = y;
+	im.state.z = z;
+	im.view.x = im.tileProvider.width;
+	im.view.y = im.tileProvider.height;
+	imInitLayer(im);
 }
 
 function imGridShift(im: InteractiveMap, nx: number, ny: number) {
