@@ -50,7 +50,6 @@ function createInteractiveMap(tileProvider: TileProvider, view: View): Interacti
 	};
 }
 
-
 const intDiv = (a: number, b: number): [number, number] => {
 	const q = Math.floor(a / b);
 	return [q, a - q * b];
