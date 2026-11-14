@@ -26,8 +26,8 @@ type TileProvider = {
 	get: (x: number, y: number, z: number) => ImageBitmap,
 }
 
-// createMap - создает интерактивную карту.
-// Используйте parent.appendChild(mapName.canvas) чтобы добавить в качестве дочернего элемента нужного вам элемента.
+// createInteractiveMap - creates InteractiveMap.
+// Use parent.appendChild(mapName.canvas) to add to DOM.
 function createInteractiveMap(tileProvider: TileProvider, view: View): InteractiveMap | null {
 	const canvas = document.createElement("canvas");
 	canvas.height = view.h + tileProvider.h * 2;
