@@ -1,0 +1,21 @@
+{
+  "name": "martian-map",
+  "version": "1.0.0",
+  "description": "Blip-A's team Martian Map",
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@codeberg.org/Blip-A/martian-map.git"
+  },
+  "author": "Blip-A",
+  "type": "commonjs",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && electron ."
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "electron": "^45.3.2",
+    "typescript": "^7.0.2"
+  }
+}
