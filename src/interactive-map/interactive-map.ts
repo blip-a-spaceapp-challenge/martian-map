@@ -1,5 +1,5 @@
 // refers to top-left tile index
-type MapState = {
+type State = {
 	x: number,
 	y: number,
 	z: number,
@@ -15,7 +15,7 @@ type View = {
 type InteractiveMap = {
 	canvas: HTMLCanvasElement,
 	canvasCtx: CanvasRenderingContext2D,
-	state: MapState,
+	state: State,
 	view: View,
 
 	tileProvider: TileProvider,
@@ -50,7 +50,7 @@ function createInteractiveMap(tileProvider: TileProvider, view: View): Interacti
 	};
 }
 
-function initLayer(im: InteractiveMap) {
+function imInitLayer(im: InteractiveMap) {
 	let y_off = im.view.height / 2;
 	let x_off = im.view.width / 2;
 
@@ -61,4 +61,20 @@ function initLayer(im: InteractiveMap) {
 		}
 		y_off += im.tileProvider.height;
 	}
-} 
+}
+
+const intDiv = (a: number, b: number): [number, number] => {
+	const q = Math.floor(a / b);
+	return [a / b, a - q * b];
+}
+
+function imSlide(im: InteractiveMap, x_off: number, y_off: number) {
+	const [y_tiles_off, y_rem] = intDiv(y_off, im.tileProvider.height);
+	const [x_tiles_off, x_rem] = intDiv(x_off, im.tileProvider.width);
+
+	if (Math.abs(x_off) > im.view.width || Math.abs(y_off) > im.view.height) {
+		imInitLayer(im);
+	} else {
+		im.canvasCtx.drawImage(im.canvas, x_off, y_off);
+	}
+}
