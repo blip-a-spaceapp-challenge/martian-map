@@ -78,6 +78,35 @@ function imInitLayer(im: InteractiveMap) {
 	}
 }
 
+function imGridShift(im: InteractiveMap, xn: number, yn: number) {
+	if (xn === 0 && yn === 0) return;
+
+	const rows = gridRows(im);
+	const cols = gridCols(im);
+
+	im.state.x += xn;
+	im.state.y += yn;
+
+	if (Math.abs(xn) >= cols || Math.abs(yn) >= rows) {
+		imInitLayer(im);
+		return;
+	}
+
+	im.canvasCtx.drawImage(im.canvas, -xn * im.tileProvider.width, -yn * im.tileProvider.height);
+
+	for (let j = 0; j < rows; ++j) {
+		const jo = j + yn;
+		const rowIsNew = jo < 0 || jo >= rows;
+		for (let i = 0; i < cols; ++i) {
+			const io = i + xn;
+			const colIsNew = io < 0 || io >= cols;
+			if (rowIsNew || colIsNew) {
+				imDrawCell(im, i, j);
+			}
+		}
+	}
+}
+
 function imSlide(im: InteractiveMap, x_off: number, y_off: number) {
 	const [y_tiles_off, y_rem] = intDiv(y_off, im.tileProvider.height);
 	const [x_tiles_off, x_rem] = intDiv(x_off, im.tileProvider.width);
