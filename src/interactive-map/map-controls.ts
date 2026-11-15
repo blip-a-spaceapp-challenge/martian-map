@@ -9,14 +9,14 @@ function applyTransform(map: InteractiveMap) {
 }
 
 type MapControls = {
-    // запросить уровень; (ox, oy) — точка в координатах viewport, которая остаётся на месте
+    // request a level; (ox, oy) is the viewport point that stays put
     zoomTo: (level: number, ox?: number, oy?: number) => void,
-    // перерисовать текущий вид (после смены слоя или размера), сохранив смещение
+    // redraw the current view (after a layer or size change), keeping the offset
     refresh: () => void,
 }
 
-// onViewChange вызывается после любого изменения вида: панорама, зум, refresh.
-// Аргумент — текущий уровень зума.
+// onViewChange fires after any view change: pan, zoom, refresh.
+// The argument is the current zoom level.
 function bindControls(
     map: InteractiveMap,
     viewport: HTMLDivElement,
@@ -45,7 +45,7 @@ function bindControls(
         const level = Math.max(0, Math.min(map.tileProvider.maxLevel, Math.round(z)))
         if (level === map.state.z) return
 
-        // не терять сдвиг, накопленный до зума
+        // don't lose the offset accumulated before the zoom
         if (raf) {
             cancelAnimationFrame(raf)
             flush()
@@ -120,7 +120,7 @@ function bindControls(
     viewport.addEventListener("wheel", (e) => {
         e.preventDefault()
         if (e.deltaY === 0) return
-        // схлопываем серию событий трекпада, но не больше ~3 кадров
+        // collapse a burst of trackpad events, but no more than ~3 frames
         const now = performance.now()
         if (now - lastWheel < 50) return
         lastWheel = now

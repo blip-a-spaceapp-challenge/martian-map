@@ -1,8 +1,4 @@
 {
-  "name": "Curiosity — кратер Гейла",
-  "targets": [
-    { "id": "t1", "name": "Aeolis Mons (Mount Sharp)", "description": "Центральная гора кратера", "lat": -5.08, "lon": 137.85 },
-    { "id": "t2", "name": "Yellowknife Bay", "description": "Первые образцы бурения", "lat": -4.59, "lon": 137.44 },
-    { "id": "t3", "name": "Pahrump Hills", "description": "Подножие горы", "lat": -4.77, "lon": 137.37 }
-  ]
+  "name": "Curiosity — Gale Crater",
+  "targets": []
 }

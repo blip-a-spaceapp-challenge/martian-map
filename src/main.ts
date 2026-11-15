@@ -25,6 +25,7 @@ const createWindow = (): void => {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
+    backgroundColor: "#111",
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
@@ -33,6 +34,7 @@ const createWindow = (): void => {
     win.webContents.on('preload-error', (_e, p, error) => {
         console.error('PRELOAD ERROR:', p, error)
     })
+    win.setMenuBarVisibility(false)
     win.loadFile(path.join(__dirname, '../public/index.html'))
 }
 
@@ -48,3 +50,4 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
+

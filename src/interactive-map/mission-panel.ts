@@ -53,6 +53,47 @@ function emit(p: MissionPanel, name: "target-select" | "target-add" | "target-re
     p.root.dispatchEvent(new CustomEvent<Target>(name, { detail: target }))
 }
 
+// The panel is anchored by its right edge, so the grip sits at the bottom-left:
+// dragging left widens it and dragging down grows it, both in the pointer's direction.
+function bindResizeGrip(root: HTMLElement, grip: HTMLElement) {
+    grip.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return
+        e.preventDefault()
+
+        const cs = getComputedStyle(root)
+        const minW = parseFloat(cs.minWidth) || 200
+        const minH = parseFloat(cs.minHeight) || 120
+        const maxW = parseFloat(cs.maxWidth) || window.innerWidth
+        const maxH = parseFloat(cs.maxHeight) || window.innerHeight
+
+        const rect = root.getBoundingClientRect()
+        const startX = e.clientX
+        const startY = e.clientY
+        const startW = rect.width
+        const startH = rect.height
+
+        grip.setPointerCapture(e.pointerId)
+
+        const onMove = (ev: PointerEvent) => {
+            const w = Math.min(maxW, Math.max(minW, startW + (startX - ev.clientX)))
+            const h = Math.min(maxH, Math.max(minH, startH + (ev.clientY - startY)))
+            root.style.width = `${Math.round(w)}px`
+            root.style.height = `${Math.round(h)}px`
+        }
+
+        const onUp = (ev: PointerEvent) => {
+            grip.removeEventListener("pointermove", onMove)
+            grip.removeEventListener("pointerup", onUp)
+            grip.removeEventListener("pointercancel", onUp)
+            if (grip.hasPointerCapture(ev.pointerId)) grip.releasePointerCapture(ev.pointerId)
+        }
+
+        grip.addEventListener("pointermove", onMove)
+        grip.addEventListener("pointerup", onUp)
+        grip.addEventListener("pointercancel", onUp)
+    })
+}
+
 function createMissionPanel(root: HTMLElement, mission: Mission, getCenter: () => { lat: number, lon: number }): MissionPanel {
     const header = el("div", "mp-header")
     const title = el("h2", "mp-title")
@@ -64,12 +105,17 @@ function createMissionPanel(root: HTMLElement, mission: Mission, getCenter: () =
     const form = el("form", "mp-form")
     const input = el("input", "mp-input")
     input.type = "text"
-    input.placeholder = "Название lat lon  (без координат — центр карты)"
+    input.placeholder = "Name lat lon  (no coordinates — map centre)"
     const addButton = el("button", "mp-add", "+")
     addButton.type = "submit"
     form.append(input, addButton)
 
     root.replaceChildren(header, list, form)
+
+    const grip = el("div", "mp-grip")
+    grip.title = "Resize"
+    root.append(grip)
+    bindResizeGrip(root, grip)
 
     const panel: MissionPanel = { root, mission, selectedId: null, getCenter, title, count, list, input, dragId: null, expanded: new Set()}
 
@@ -94,7 +140,7 @@ let saveChain: Promise<unknown> = Promise.resolve()
 function mpSave(p: MissionPanel) {
     if (!window.missionStore) return
     const snapshot = JSON.parse(JSON.stringify(p.mission)) as Mission
-    // цепочка, чтобы записи шли строго по очереди
+    // chain the writes so they run strictly one after another
     saveChain = saveChain
         .then(() => window.missionStore!.save(snapshot))
         .catch((err) => console.error("Cant save mission", err))
@@ -164,7 +210,7 @@ function mpRender(p: MissionPanel) {
             col.append(el("div", open ? "mp-target-desc open" : "mp-target-desc", t.description))
 
             if (t.description.length > 90) {
-                const toggle = el("button", "mp-more", open ? "Свернуть" : "Читать полностью")
+                const toggle = el("button", "mp-more", open ? "Collapse" : "Read more")
                 toggle.type = "button"
                 toggle.addEventListener("click", () => {
                     if (open) p.expanded.delete(t.id)
@@ -177,7 +223,7 @@ function mpRender(p: MissionPanel) {
 
         const del = el("button", "mp-del", "✕")
         del.type = "button"
-        del.title = "Удалить цель"
+        del.title = "Remove target"
         del.addEventListener("click", (e) => {
             e.stopPropagation()
             mpRemove(p, t.id)
@@ -200,7 +246,7 @@ function mpAdd(p: MissionPanel, name: string, coords?: { lat: number, lon: numbe
     const { lat, lon } = coords ?? p.getCenter()
     const target: Target = {
         id: `t${Date.now()}`,
-        name: name || `Цель ${p.mission.targets.length + 1}`,
+        name: name || `Target ${p.mission.targets.length + 1}`,
         lat,
         lon,
     }
@@ -224,7 +270,7 @@ const orderKey = (p: MissionPanel) => `mission-order:${p.mission.name}`
 function mpSaveOrder(p: MissionPanel) {
     try {
         localStorage.setItem(orderKey(p), JSON.stringify(p.mission.targets.map(t => t.id)))
-    } catch { /* storage недоступен — порядок просто не сохранится */ }
+    } catch { /* storage unavailable — the order simply won't persist */ }
 }
 
 function mpApplySavedOrder(p: MissionPanel) {
@@ -233,13 +279,13 @@ function mpApplySavedOrder(p: MissionPanel) {
         if (!raw) return
         const ids = JSON.parse(raw) as string[]
         const rank = new Map(ids.map((id, i) => [id, i]))
-        // цели, которых нет в сохранённом порядке (новые в JSON), уходят в конец
+        // targets missing from the saved order (new in JSON) go to the end
         const r = (t: Target) => rank.get(t.id) ?? Number.MAX_SAFE_INTEGER
         p.mission.targets.sort((a, b) => r(a) - r(b))
-    } catch { /* битые данные игнорируем */ }
+    } catch { /* ignore corrupted data */ }
 }
 
-// Переносит цель `id` перед целью `beforeId` (или в конец, если beforeId === null)
+// Moves target `id` before `beforeId` (or to the end when beforeId === null)
 function mpMove(p: MissionPanel, id: string, beforeId: string | null) {
     if (id === beforeId) return
     const targets = p.mission.targets
@@ -257,14 +303,14 @@ function mpMove(p: MissionPanel, id: string, beforeId: string | null) {
 
 type ParsedInput = { name: string, coords: { lat: number, lon: number } | null, error: boolean }
 
-// "Название lat lon" -> имя + координаты. Без координат в конце строки — просто имя.
+// "Name lat lon" -> name + coordinates. Without trailing coordinates it is just a name.
 function parseTargetInput(text: string): ParsedInput {
     const m = text.match(/^(.*?)[\s;@]*(-?\d+(?:\.\d+)?)°?\s*[,;\s]\s*(-?\d+(?:\.\d+)?)°?\s*$/)
     if (!m) return { name: text, coords: null, error: false }
 
     const lat = Number(m[2])
     let lon = Number(m[3])
-    if (lon > 180 && lon <= 360) lon -= 360   // долгота 0..360 -> -180..180
+    if (lon > 180 && lon <= 360) lon -= 360   // longitude 0..360 -> -180..180
 
     if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
         return { name: text, coords: null, error: true }

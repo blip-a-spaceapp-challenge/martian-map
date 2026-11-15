@@ -2,13 +2,13 @@ type LayerInfo = {
     id: string,
     name: string,
     description: string,
-    productId: string,   // id продукта на Mars Trek
+    productId: string,   // Mars Trek product id
 }
 
-// ЗАГЛУШКА: потом заменить на запрос к API
+// STUB: replace with an API request later
 const STUB_LAYERS: LayerInfo[] = [
-    { id: "photo", name: "Снимки", description: "Цветная мозаика Viking", productId: "Mars_Viking_MDIM21_ClrMosaic_global_232m" },
-    { id: "elevation", name: "Высоты", description: "Рельеф MOLA", productId: "Mars_MGS_MOLA_ClrShade_merge_global_463m" },
+    { id: "photo", name: "Imagery", description: "Viking color mosaic", productId: "Mars_Viking_MDIM21_ClrMosaic_global_232m" },
+    { id: "elevation", name: "Elevation", description: "MOLA shaded relief", productId: "Mars_MGS_MOLA_ClrShade_merge_global_463m" },
 ]
 
 async function fetchLayers(): Promise<LayerInfo[]> {

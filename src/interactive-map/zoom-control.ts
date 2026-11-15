@@ -3,11 +3,11 @@ type ZoomControl = {
     setMaxLevel: (max: number) => void,
 }
 
-// Принимает колбэк (вызывается, когда пользователь двигает слайдер)
-// и возвращает функции, которыми внешний код сообщает об изменениях.
+// Takes a callback (fired when the user moves the slider)
+// and returns the functions the outside code uses to report changes.
 function createZoomControl(root: HTMLElement, maxLevel: number, onRequest: (level: number) => void): ZoomControl {
     const label = document.createElement("label")
-    label.append("Масштаб ")
+    label.append("Zoom ")
     const slider = document.createElement("input")
     slider.type = "range"
     slider.min = "0"
@@ -29,7 +29,7 @@ function createZoomControl(root: HTMLElement, maxLevel: number, onRequest: (leve
 
     render()
     return {
-        // программное изменение значения событие "input" не вызывает, цикла нет
+        // setting the value programmatically does not fire "input", so there is no loop
         setLevel: (level) => { slider.value = String(level); render() },
         setMaxLevel: (m) => { max = m; render() },
     }
