@@ -39,3 +39,6 @@ async function testDatasets() {
 
 void testDatasets()
 
+export type { Point }
+export { pointsOf }
+
