@@ -21,6 +21,8 @@ type InteractiveMap = {
 	view: View,
 
 	tileProvider: TileProvider,
+
+	clearDraw: boolean,
 };
 
 type TileProvider = {
@@ -41,7 +43,7 @@ function createCanvas(width: number, height: number): HTMLCanvasElement {
 
 // createInteractiveMap - creates InteractiveMap.
 // Use parent.appendChild(mapName.canvas) to add to DOM.
-function createInteractiveMap(tileProvider: TileProvider, view: View): InteractiveMap | null {
+function createInteractiveMap(tileProvider: TileProvider, view: View, clearDraw: boolean = true): InteractiveMap | null {
 	// tile only partially inside view should still fully fit in canvas, from both sides
 	const canvas = createCanvas(
 		(Math.ceil(view.width / tileProvider.width) + 2) * tileProvider.width,
@@ -62,6 +64,7 @@ function createInteractiveMap(tileProvider: TileProvider, view: View): Interacti
 		state: { x: NaN, y: NaN, z: NaN },
 		view,
 		tileProvider,
+		clearDraw,
 	};
 }
 
@@ -97,12 +100,12 @@ function imInitLayer(im: InteractiveMap) {
 
 function imJumpTo(im: InteractiveMap, x: number, y: number, z: number, c: number = 2) {
 	const s = c ** (z - im.state.z);
-	if (s !== 1 && Number.isFinite(s)) {
+	const ox = (im.state.x * s - x) * im.tileProvider.width;
+	const oy = (im.state.y * s - y) * im.tileProvider.height;
+
+	if (im.clearDraw && Number.isFinite(s) && s !== 1) {
 		im.resCanvasCtx.clearRect(0, 0, im.resCanvas.width, im.resCanvas.height);
 		im.resCanvasCtx.drawImage(im.canvas, 0, 0);
-
-		const ox = (im.state.x * s - x) * im.tileProvider.width;
-		const oy = (im.state.y * s - y) * im.tileProvider.height;
 
 		im.canvasCtx.clearRect(0, 0, im.canvas.width, im.canvas.height);
 		im.canvasCtx.drawImage(im.resCanvas, ox, oy, im.resCanvas.width * s, im.resCanvas.height * s);
@@ -130,7 +133,9 @@ function imGridShift(im: InteractiveMap, nx: number, ny: number) {
 		return;
 	}
 
+	if (im.clearDraw) im.canvasCtx.globalCompositeOperation = "copy";
 	im.canvasCtx.drawImage(im.canvas, -nx * im.tileProvider.width, -ny * im.tileProvider.height);
+	if (im.clearDraw) im.canvasCtx.globalCompositeOperation = "source-over";
 
 	for (let j = 0; j < rows; ++j) {
 		const oj = j + ny;
