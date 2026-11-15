@@ -10,13 +10,13 @@ type View = {
 	y: number,
 	width: number,
 	height: number,
-}
+};
 
 type Layer = {
 	provider: TileProvider,
 	canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
-}
+};
 
 type InteractiveMap = {
 	canvas: HTMLCanvasElement,
@@ -36,7 +36,7 @@ type TileProvider = {
 	height: number,
 	maxLevel: number,
 	get: (x: number, y: number, z: number) => ImageBitmap | null,
-}
+};
 
 function createCanvas(width: number, height: number): HTMLCanvasElement {
 	const canvas = document.createElement("canvas");
