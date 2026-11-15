@@ -43,7 +43,7 @@ function bindControls(
     const zoomTo = (z: number, ox = viewport.clientWidth / 2, oy = viewport.clientHeight / 2) => {
         if (!Number.isFinite(map.state.z)) return
 
-        const level = Math.max(0, Math.min(map.tileProvider.maxLevel, Math.round(z)))
+        const level = Math.max(0, Math.min(map.maxLevel, Math.round(z)))
         if (level === map.state.z) return
 
         // don't lose the offset accumulated before the zoom

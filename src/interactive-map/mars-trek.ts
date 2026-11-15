@@ -121,6 +121,47 @@ async function fetchWMTSCapabilities(productId: any): Promise<WMTSCapabilities> 
 type TileKey = string
 const tileKey = (x: number, y: number, z: number): TileKey => `${z}/${x}/${y}`
 
+// Tile index range a layer actually has data for, per zoom level.
+// Small products declare a global matrix but only publish tiles inside their bbox,
+// so anything outside these ranges would be a guaranteed 404.
+type LevelLimits = {
+    minCol: number,
+    maxCol: number,
+    minRow: number,
+    maxRow: number
+}
+
+function levelLimits(capabilities: WMTSCapabilities): Map<number, LevelLimits> {
+    const limits = new Map<number, LevelLimits>()
+    // bounds is [[minLat, minLon], [maxLat, maxLon]]
+    const box = capabilities.bounds
+
+    for (const matrix of capabilities.tileMatricies) {
+        const mw = matrix.matrixWidth > 0 ? matrix.matrixWidth : 2 ** (matrix.identifier + 1)
+        const mh = matrix.matrixHeight > 0 ? matrix.matrixHeight : 2 ** matrix.identifier
+
+        // no bbox: the whole matrix is fair game
+        if (!box) {
+            limits.set(matrix.identifier, { minCol: 0, maxCol: mw - 1, minRow: 0, maxRow: mh - 1 })
+            continue
+        }
+
+        const [minLat, minLon] = box[0]
+        const [maxLat, maxLon] = box[1]
+        const col = (lon: number) => Math.floor((lon + 180) / 360 * mw)
+        const row = (lat: number) => Math.floor((90 - lat) / 180 * mh)
+
+        // every tile the box touches is kept; the box may not cross the antimeridian
+        limits.set(matrix.identifier, {
+            minCol: Math.max(0, col(minLon)),
+            maxCol: Math.min(mw - 1, col(maxLon)),
+            minRow: Math.max(0, row(maxLat)),
+            maxRow: Math.min(mh - 1, row(minLat)),
+        })
+    }
+    return limits
+}
+
 type CachedTileProvider = {
     width: number,
     height: number,
@@ -141,31 +182,33 @@ async function loadTile(cache: Map<TileKey, ImageBitmap | null>, pending: Set<Ti
         .replaceAll("{TileRow}", String(y))
         .replaceAll("{TileCol}", String(x))
 
-    let tile: ImageBitmap | null = null
+    // a 404 is permanent: remember the miss so the tile is never asked for again.
+    // a thrown network error is not, so that key stays uncached for a retry.
+    const trim = () => {
+        while (cache.size > MAX_CACHE_SIZE) {
+            const first = cache.keys().next()
+            if (first.done) break;
+            const image = cache.get(first.value)
+            if (image != null) image.close()
+            cache.delete(first.value)
+        }
+    }
+
     try {
         const response = await fetch(url)
         if (!response.ok) {
             console.log("Couldnt load tile! ", response.status)
-            cache.set(key, null);
-            return;
-        } else {
-            tile = await createImageBitmap(await response.blob())
-            console.log("Tile loaded successfuly! ", tile)
+            cache.set(key, null)
+            return
         }
+        const tile = await createImageBitmap(await response.blob())
+        cache.set(key, tile)
+        onLoad?.(x, y, z)
     } catch (error) {
         console.log("Couldnt load tile! ", error)
-    }
-
-    cache.set(key, tile)
-    pending.delete(key)
-    onLoad?.(x, y, z)
-    
-    while (cache.size > MAX_CACHE_SIZE) {
-        const first = cache.keys().next()
-        if (first.done) break;
-        const image = cache.get(first.value)
-        if (image !== undefined && image != null) image.close()
-        cache.delete(first.value)
+    } finally {
+        pending.delete(key)
+        trim()
     }
 }
 async function createCachedTileProviderFor(productId: string, onLoad?: (x: number, y: number, z: number) => void): Promise<CachedTileProvider> {
@@ -176,6 +219,7 @@ async function createCachedTileProviderFor(productId: string, onLoad?: (x: numbe
 
     const pending = new Set<TileKey>()
     const cache = new Map<TileKey, ImageBitmap | null>()
+    const limits = levelLimits(capabilities)
 
     return {
         width: width,
@@ -185,6 +229,12 @@ async function createCachedTileProviderFor(productId: string, onLoad?: (x: numbe
         pending: pending,
         cache: cache,
         get: (x, y, z) => {
+            // outside the area or the levels this product publishes: no request at all
+            const range = limits.get(z)
+            if (range === undefined) return null
+            if (x < range.minCol || x > range.maxCol) return null
+            if (y < range.minRow || y > range.maxRow) return null
+
             const key = tileKey(x, y, z)
             const hit = cache.get(key)
             if (hit !== undefined) return hit;

@@ -1,7 +1,7 @@
 import { loadDatasets } from "../data/data.ts"
 import type { Point } from "../data/data.ts"
 import type { InteractiveMap } from "./interactive-map.ts"
-import { createInteractiveMap, gridCols, gridRows, imDrawCell, imJumpTo } from "./interactive-map.ts"
+import { createInteractiveMap, imJumpTo, imOnTileLoaded } from "./interactive-map.ts"
 import type { MapControls } from "./map-controls.ts"
 import { applyTransform, bindControls } from "./map-controls.ts"
 import { createOverlay, shapesFrom } from "./map-overlay.ts"
@@ -30,6 +30,11 @@ function mapCenterLonLat(map: InteractiveMap, tiles: CachedTileProvider, viewpor
     return { lat: Number(lat.toFixed(4)), lon: Number(lon.toFixed(4)) }
 }
 
+// Gale Crater centre, and the level the map opens at
+const GALE_LON = 137.8
+const GALE_LAT = -5.4
+const DEFAULT_ZOOM = 9
+
 function el(id: string): HTMLElement {
     const node = document.getElementById(id)
     if (!node) throw new Error(`no #${id}`)
@@ -48,19 +53,15 @@ async function createMap() {
     async function loadLayer(info: LayerInfo, index: number): Promise<CachedTileProvider> {
         return createCachedTileProviderFor(info.productId, (x, y, z) => {
             const map = mapRef.current
-            if (!map || z !== map.state.z) return
-            const i = x - map.state.x
-            const j = y - map.state.y
-            if (i < 0 || j < 0 || i >= gridCols(map) || j >= gridRows(map)) return
-            imDrawCell(map, index, i, j)
+            // a tile of a shallow layer fills several cells once upscaled
+            if (map) imOnTileLoaded(map, index, x, y, z)
         })
     }
 
     const providers = await Promise.all(layers.map((info, index) => loadLayer(info, index)))
 
-    // Every product shares the same global tile grid, so the deepest one gives
-    // the map its grid and how far the user can zoom in. Layers that stop
-    // earlier simply stay empty at deeper levels.
+    // Every product shares the same global tile grid, so the deepest one supplies
+    // the projection matrices for every zoom level the map can reach.
     const tiles = providers.reduce((a, b) => (b.maxLevel > a.maxLevel ? b : a))
 
     const view = { x: 0, y: 0, width: viewport.clientWidth, height: viewport.clientHeight }
@@ -79,13 +80,13 @@ async function createMap() {
         applyZoomLevel(level)
         overlay.redraw()
     })
-    const zoom = createZoomControl(el("zoom"), tiles.maxLevel, (level) => controls.zoomTo(level))
+    const zoom = createZoomControl(el("zoom"), created.maxLevel, (level) => controls.zoomTo(level))
     const scale = createScaleBar(el("scale"), created)
     applyZoomLevel = (level) => { zoom.setLevel(level); scale.refresh() }
 
     // point the map at a location: (lon, lat) ends up in the viewport centre
     const centerOn = (lon: number, lat: number, requestedZoom: number) => {
-        const z = Math.max(0, Math.min(tiles.maxLevel, Math.round(requestedZoom)))
+        const z = Math.max(0, Math.min(created.maxLevel, Math.round(requestedZoom)))
         const c = lonLatToWorld(tiles, lon, lat, z)
         const gx = c.x - viewport.clientWidth / 2
         const gy = c.y - viewport.clientHeight / 2
@@ -122,7 +123,7 @@ async function createMap() {
     })
     resize_observer.observe(viewport)
 
-    imJumpTo(created, 0, 0, Math.min(4, tiles.maxLevel))
+    imJumpTo(created, 0, 0, Math.min(DEFAULT_ZOOM, created.maxLevel))
     applyZoomLevel(created.state.z)
 
     // Layers: every product has its own canvas stacked inside .im-root,
@@ -142,11 +143,8 @@ async function createMap() {
     console.log("Datasets are loaded")
     overlay.setShapes(shapesFrom(datasets))
 
-    // centre on landing area A instead of the world map corner
-    const pts = datasets.landingA.generalArea.points
-    const lon = pts.reduce((s, p) => s + p.longitude, 0) / pts.length
-    const lat = pts.reduce((s, p) => s + p.latitude, 0) / pts.length
-    centerOn(lon, lat, 5)
+    // open on Gale Crater, deep enough to read the landing sites and boxworks
+    centerOn(GALE_LON, GALE_LAT, DEFAULT_ZOOM)
 
     // Missions: targets come from the datasets so the menu matches what is drawn
     const extents = new Map<string, Point[]>()
@@ -211,7 +209,7 @@ async function createMap() {
     const zoomForTarget = (target: Target) => {
         const points = extents.get(target.id)
         if (points) return fitZoom(points)
-        return Math.min(tiles.maxLevel, Math.max(created.state.z, 6))
+        return Math.min(created.maxLevel, Math.max(created.state.z, 6))
     }
 
     panelRoot.addEventListener("target-select", (e) => {
