@@ -58,3 +58,29 @@ li { margin-bottom: 6px; }
   font-size: 13px;
   opacity: 0.6;
 }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 16px;
+  font-size: 14px;
+}
+
+th,
+td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+}
+
+th {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+}
+
+tbody tr:last-child td { border-bottom: none; }
+
+.article a { color: #ff9a6a; }
+.article a:hover { text-decoration: underline; }
