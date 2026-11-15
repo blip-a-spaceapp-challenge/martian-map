@@ -5,15 +5,7 @@ const TREK_MARS_EQ = "https://trek.nasa.gov/tiles/Mars/EQ"
 const MAX_CACHE_SIZE = 512
 
 
-type WMTSCapabilities = {
-    template: string,
-    format: string,
-    style: string,
-    matrixSet: string,
-    maxLevel: number,
-    tile_size: [number, number],
-    bounds: [number[], number[]] | null
-}
+
 function firstText(parent: Element, localName: string) {
     const node = parent.querySelector(localName);
     return node ? node.textContent.trim() : null;
@@ -29,6 +21,49 @@ function readCorner(box: Element, localName: string) {
     if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
 
     return { a, b };
+}
+
+
+
+type TyleMatrix = {
+    identifier: number,
+    scaleDenominator: number,
+    topLeftCorner: [number, number] | null,
+    tileWidth: number,
+    tileHeight: number,
+    matrixWidth: number,
+    matrixHeight: number
+}
+function parseTileMatrix(element: Element): TyleMatrix {
+    const identifier = Number(firstText(element, "Identifier"))
+    const scaleDenominator = Number(firstText(element, "scaleDenominator"))
+    const topLeftCorner = readCorner(element, "TopLeftCorner")
+    const tileWidth = Number(firstText(element, "TileWidth"))
+    const tileHeight = Number(firstText(element, "TileHeight"))
+    const matrixWidth = Number(firstText(element, "MatrixWidth"))
+    const matrixHeight = Number(firstText(element, "MatrixHeight"))
+    return {
+        identifier,
+        scaleDenominator,
+        topLeftCorner: topLeftCorner ? [topLeftCorner.a, topLeftCorner.b] : null,
+        tileWidth,
+        tileHeight,
+        matrixWidth,
+        matrixHeight
+    }
+}
+
+
+
+type WMTSCapabilities = {
+    template: string,
+    format: string,
+    style: string,
+    matrixSet: string,
+    tileMatricies: TyleMatrix[],
+    maxLevel: number,
+    tileSize: [number, number],
+    bounds: [number[], number[]] | null
 }
 async function fetchWMTSCapabilities(productId: any): Promise<WMTSCapabilities> {
     const url = `${TREK_MARS_EQ}/${encodeURIComponent(productId)}/1.0.0/WMTSCapabilities.xml`;
@@ -48,18 +83,19 @@ async function fetchWMTSCapabilities(productId: any): Promise<WMTSCapabilities> 
         throw new Error(`"${productId}" has no REST tile template.`);
     }
 
-    const tile_sizes = [...xml.getElementsByTagName("TileMatrix")]
-        .map(matrix => [Number(firstText(matrix, "TileWidth")), Number(firstText(matrix, "TileHeight"))]);
-    const tile_size = tile_sizes[0];
-    for (const tsize of tile_sizes) {
-        if (tsize[0] !== tile_size[0] || tsize[1] !== tile_size[1]) {
+    const tileMatricies = [...xml.getElementsByTagName("TileMatrix")]
+        .map(matrix => parseTileMatrix(matrix))
+
+    const tileSize = [tileMatricies[0].tileWidth, tileMatricies[1].tileHeight];
+    for (const matrix of tileMatricies) {
+        if (matrix.tileWidth !== tileSize[0] || matrix.tileHeight !== tileSize[1]) {
             throw new Error('Supported only WMTS services with uniform tile dimensions!');
         }
     } 
 
-    const levels = [...xml.getElementsByTagName("TileMatrix")]
-        .map(matrix => Number(firstText(matrix, "Identifier")))
-        .filter(level => Number.isFinite(level));
+    const levels = tileMatricies
+        .map(matrix => matrix.identifier)
+        .filter(level => Number.isFinite(level))
 
     const matrixSet = xml.querySelector("TileMatrixSet:has(Identifier)");
 
@@ -73,8 +109,9 @@ async function fetchWMTSCapabilities(productId: any): Promise<WMTSCapabilities> 
         format: resource.getAttribute("format") || firstText(xml.documentElement, "Format") || "image/jpeg",
         style: (style && firstText(style, "Identifier")) || "default",
         matrixSet: (matrixSet && firstText(matrixSet, "Identifier")) || "default028mm",
+        tileMatricies: tileMatricies,
         maxLevel: levels.length ? Math.max(...levels) : 7,
-        tile_size: [tile_size[0], tile_size[1]],
+        tileSize: [tileSize[0], tileSize[1]],
         bounds: lower && upper ? [[lower.b, lower.a], [upper.b, upper.a]] : null
     };
 }
@@ -130,8 +167,8 @@ async function loadTile(cache: Map<TileKey, ImageBitmap | null>, pending: Set<Ti
 async function createCachedTileProviderFor(productId: string, onLoad?: (x: number, y: number, z: number) => void): Promise<CachedTileProvider> {
     const capabilities = await fetchWMTSCapabilities(productId)
 
-    const width = capabilities.tile_size[0]
-    const height = capabilities.tile_size[1]
+    const width = capabilities.tileSize[0]
+    const height = capabilities.tileSize[1]
 
     const pending = new Set<TileKey>()
     const cache = new Map<TileKey, ImageBitmap | null>()
