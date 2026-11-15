@@ -135,3 +135,85 @@ body {
 .mp-target.drop-after { box-shadow: 0 3px 0 #ff7a45; }
 
 .mp-input.invalid { border-color: #ff5a5a; background: rgb(255 80 80 / 15%); }
+
+#layers {
+  position: fixed;
+  left: 8px;
+  top: 56px;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 10px;
+  background: rgb(10 10 14 / 35%);
+  border: 1px solid rgb(255 255 255 / 15%);
+  backdrop-filter: blur(6px);
+}
+#layers button {
+  padding: 6px 12px;
+  color: #fff;
+  font: 12px system-ui, sans-serif;
+  background: rgb(255 255 255 / 10%);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+}
+#layers button:hover { background: rgb(255 255 255 / 18%); }
+#layers button.active { border-color: #ff7a45; background: rgb(255 122 69 / 25%); }
+
+.mp-target-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mp-target-col .mp-target-body { flex: none; }
+.mp-target-desc {
+  padding: 0 10px 4px;
+  font-size: 12px;
+  opacity: 0.85;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.mp-target-desc.open { display: block; -webkit-line-clamp: unset; }
+.mp-more {
+  align-self: flex-start;
+  margin: 0 10px 8px;
+  padding: 0;
+  color: #ff9a6a;
+  font: 12px system-ui, sans-serif;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.mp-more:hover { text-decoration: underline; }
+
+#zoom {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgb(10 10 14 / 35%);
+  border: 1px solid rgb(255 255 255 / 15%);
+  backdrop-filter: blur(6px);
+  font: 12px system-ui, sans-serif;
+}
+#zoom label {
+  display: grid;
+  grid-template-columns: auto 180px 56px;
+  align-items: center;
+  gap: 8px;
+}
+#zoom input[type="range"] { accent-color: #ff7a45; }
+#zoom output { font: 11px monospace; opacity: 0.8; text-align: right; }
+#about-link {
+  position: fixed;
+  left: 12px;
+  bottom: 72px;
+  padding: 8px 14px;
+  color: #fff;
+  font: 12px system-ui, sans-serif;
+  text-decoration: none;
+  border-radius: 10px;
+  background: rgb(10 10 14 / 35%);
+  border: 1px solid rgb(255 255 255 / 15%);
+  backdrop-filter: blur(6px);
+}
+#about-link:hover { background: rgb(255 255 255 / 18%); }

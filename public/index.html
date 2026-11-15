@@ -5,9 +5,7 @@
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://trek.nasa.gov; img-src 'self' data: https://trek.nasa.gov https://astro.arcgis.com"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://trek.nasa.gov; img-src 'self' data: https://trek.nasa.gov https://astro.arcgis.com"
     />
-    <link rel="stylesheet" href="./style.css" />
     <link rel="stylesheet" href="./style.css" />
     <title>Martian Map</title>
   </head>
@@ -15,10 +13,9 @@
     <div id="viewport"></div>
     <div id="hud"></div>
     <aside id="missions"></aside>
-    <script type="module" src="./js/interactive-map/interactive-map.js"></script>
-    <script type="module" src="./js/interactive-map/map-controls.js"></script>
-    <script type="module" src="./js/interactive-map/mars-trek.js"></script>
+    <div id="layers"></div>
+    <div id="zoom"></div>
+    <a id="about-link" href="./mission.html">О миссии</a>
     <script type="module" src="./js/interactive-map/map-init.js"></script>
-    <script type="module" src="./js/interactive-map/mission-panel.js"></script>
   </body>
 </html>

@@ -22,6 +22,8 @@ type MissionPanel = {
     list: HTMLUListElement,
     input: HTMLInputElement,
     dragId: string | null
+
+    expanded: Set<string>
 }
 declare global {
     interface Window {
@@ -69,7 +71,7 @@ function createMissionPanel(root: HTMLElement, mission: Mission, getCenter: () =
 
     root.replaceChildren(header, list, form)
 
-    const panel: MissionPanel = { root, mission, selectedId: null, getCenter, title, count, list, input, dragId: null}
+    const panel: MissionPanel = { root, mission, selectedId: null, getCenter, title, count, list, input, dragId: null, expanded: new Set()}
 
     form.addEventListener("submit", (e) => {
         e.preventDefault()
@@ -83,7 +85,6 @@ function createMissionPanel(root: HTMLElement, mission: Mission, getCenter: () =
         input.value = ""
     })
     input.addEventListener("input", () => input.classList.remove("invalid"))
-    mpSave(panel)
     mpRender(panel)
     return panel
 }
@@ -153,8 +154,26 @@ function mpRender(p: MissionPanel) {
             el("div", "mp-target-name", t.name),
             el("div", "mp-target-meta", `${t.lat.toFixed(3)}°, ${t.lon.toFixed(3)}°`),
         )
-        if (t.description) body.append(el("div", "mp-target-desc", t.description))
         body.addEventListener("click", () => mpSelect(p, t.id))
+
+        const col = el("div", "mp-target-col")
+        col.append(body)
+
+        if (t.description) {
+            const open = p.expanded.has(t.id)
+            col.append(el("div", open ? "mp-target-desc open" : "mp-target-desc", t.description))
+
+            if (t.description.length > 90) {
+                const toggle = el("button", "mp-more", open ? "Свернуть" : "Читать полностью")
+                toggle.type = "button"
+                toggle.addEventListener("click", () => {
+                    if (open) p.expanded.delete(t.id)
+                    else p.expanded.add(t.id)
+                    mpRender(p)
+                })
+                col.append(toggle)
+            }
+        }
 
         const del = el("button", "mp-del", "✕")
         del.type = "button"
@@ -164,7 +183,7 @@ function mpRender(p: MissionPanel) {
             mpRemove(p, t.id)
         })
 
-        li.append(body, del)
+        li.append(col, del)
         return li
     }))
 }
