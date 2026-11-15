@@ -14,7 +14,7 @@ type Dataset = {
 }
 
 async function pointsOf(dataset_path: string): Promise<Point[]> {
-    const response = await fetch(`./regions/${dataset_path}`)
+    const response = await fetch(`./regions/${dataset_path}.json`)
     if (!response.ok) throw new Error(`could not fetch ${dataset_path} dataset! ${response.status}`);
 
     try { 
@@ -24,6 +24,10 @@ async function pointsOf(dataset_path: string): Promise<Point[]> {
         throw new Error("is not a valid JSON!")
     }
 }
+
+
+
+const RAD = Math.PI / 180
 
 
 
@@ -40,7 +44,7 @@ async function parsePath(dataset_path: string): Promise<Path> {
 
     const distance = last.distance
     const elevation = last.elevation - first.elevation
-    const approximate_angle = Math.atan((last.elevation - first.elevation) / last.distance)
+    const approximate_angle = Math.atan2(last.elevation - first.elevation, last.distance) / RAD
 
     return {
         points,
@@ -57,7 +61,6 @@ type Region = {
 // Vibecoded by Deepseek
 function areaOnMars(points: Point[]): number {
     const MARS_RADIUS = 3_396_160 // meters
-    const RAD = Math.PI / 180
     
     let total = 0
     for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
@@ -79,17 +82,79 @@ async function parseRegion(dataset_path: string): Promise<Region> {
 
 
 
+type Location = {
+    generalArea: Region,
+    pointsOfInterest: Region[]
+}
+async function loadLocation(code: string, numberOfPoIs: number): Promise<Location> {
+    const generalArea = await parseRegion(`${code}/GeneralArea`)
+    let pointsOfInterest = []
+    for (let i = 1; i <= numberOfPoIs; i++) {
+        const region = await parseRegion(`${code}/${i}`)
+        pointsOfInterest.push(region)
+    }
+    return {
+        generalArea,
+        pointsOfInterest
+    }
+}
+
+type Landing = {
+    generalArea: Region,
+    pathsToLocations: Map<string, Path[]>
+}
+async function loadLanding(code: string, paths: Map<string, number>): Promise<Landing> {
+    const generalArea = await parseRegion(`${code}/GeneralArea`)
+    let pathsToLocations = new Map<string, Path[]>()
+    for (const [lcode, n] of paths) {
+        let paths = []
+        for (let i = 1; i <= n; i++) {
+            paths.push(await parsePath(`${code}/PathTo${lcode}${n}`))
+        }
+        pathsToLocations.set(lcode, paths)
+    }
+    return {
+        generalArea,
+        pathsToLocations
+    }
+}
+
+type Datasets = {
+    locationA: Location,
+    locationB: Location,
+    locationC: Location,
+    locationD: Location,
+    locationE: Location,
+    landingA: Landing,
+    landingB: Landing,
+    landingC: Landing
+}
+async function loadDatasets(): Promise<Datasets> {
+    const locationA = await loadLocation("A", 1)
+    const locationB = await loadLocation("B", 5)
+    const locationC = await loadLocation("C", 6)
+    const locationD = await loadLocation("D", 7)
+    const locationE = await loadLocation("E", 1)
+    const landingA = await loadLanding("LandingA", new Map([["C", 1], ["D", 1], ["E", 1]]))
+    const landingB = await loadLanding("LandingB", new Map([["A", 2], ["B", 1]]))
+    const landingC = await loadLanding("LandingC", new Map([["A", 1], ["B", 1], ["C", 1], ["D", 1]]))
+    return {
+        locationA,
+        locationB,
+        locationC,
+        locationD,
+        locationE,
+        landingA,
+        landingB,
+        landingC
+    }
+}
+
+
 
 async function testDatasets() {
-    const a1 = await parseRegion("A/1.json")
-    const b1 = await parseRegion("B/1.json")
-    const b2 = await parseRegion("B/2.json")
-    const b3 = await parseRegion("B/3.json")
-    const b4 = await parseRegion("B/4.json")
-    const b5 = await parseRegion("B/5.json")
-    const bg = await parseRegion("B/GeneralArea.json")
-
-    console.log(a1, b1, b2, b3, b4, b5, bg)
+    const datasets = await loadDatasets()
+    console.log(datasets)
 }
 
 void testDatasets()

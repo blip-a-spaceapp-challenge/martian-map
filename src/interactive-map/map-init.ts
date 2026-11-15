@@ -1,3 +1,4 @@
+import { Path, Region } from "../data/data.ts"
 import type { State, View, InteractiveMap, TileProvider } from "./interactive-map.ts"
 import { createInteractiveMap, imDrawCell, imInitLayer, imJumpTo, imSlide } from "./interactive-map.ts"
 import { bindControls } from "./map-controls.ts"
