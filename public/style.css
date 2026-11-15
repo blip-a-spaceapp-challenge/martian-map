@@ -238,3 +238,76 @@ body {
   backdrop-filter: blur(6px);
 }
 #about-link:hover { background: rgb(255 255 255 / 18%); }
+
+/* Map legend, bottom right. Colours mirror map-overlay.ts. */
+#legend {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  min-width: 150px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgb(10 10 14 / 35%);
+  border: 1px solid rgb(255 255 255 / 15%);
+  backdrop-filter: blur(6px);
+  font: 12px system-ui, sans-serif;
+}
+
+.lg-title {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+}
+
+.lg-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lg-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lg-swatch {
+  width: 14px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+
+.lg-area    { background: rgb(74 170 255 / 45%); border: 1px solid #4af; }
+.lg-poi     { background: rgb(253 224 71 / 45%); border: 1px solid #fde047; }
+.lg-landing { background: rgb(192 132 252 / 45%); border: 1px solid #c084fc; }
+.lg-path    { background: none; border-top: 2px dashed #f66; border-radius: 0; }
+
+/* Current map scale, inside the legend panel. */
+.lg-scale {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgb(255 255 255 / 12%);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sb-label {
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+
+/* scale bar: a baseline with a tick at each end */
+.sb-bar {
+  height: 5px;
+  border: 1px solid rgb(255 255 255 / 60%);
+  border-top: none;
+  border-radius: 0 0 2px 2px;
+}

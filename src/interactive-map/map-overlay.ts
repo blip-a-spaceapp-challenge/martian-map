@@ -36,9 +36,9 @@ function shapesFrom(d: Datasets): Shape[] {
         shapes.push({
             points: land.generalArea.points,
             closed: true,
-            color: "#6f6",
+            color: "#b266ff",
             width: 1.5,
-            fill: "rgba(192, 132, 252, 0.15)"
+            fill: "rgba(178, 102, 255, 0.15)"
         })
         for (const paths of land.pathsToLocations.values()) {
             for (const p of paths) {
@@ -46,7 +46,8 @@ function shapesFrom(d: Datasets): Shape[] {
                     points: p.points,
                     closed: false,
                     color: "#f66",
-                    width: 2
+                    width: 2,
+                    dash: [6, 4]
                 })
             }
         }

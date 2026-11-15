@@ -9,6 +9,7 @@ import { lonLatToWorld } from "./map-projection.ts"
 import { createCachedTileProviderFor } from "./mars-trek.ts"
 import type { CachedTileProvider } from "./mars-trek.ts"
 import { createZoomControl } from "./zoom-control.ts"
+import { createScaleBar } from "./scale-bar.ts"
 import { fetchLayers } from "./layers.ts"
 import type { LayerInfo } from "./layers.ts"
 import { createLayerPanel } from "./layer-panel.ts"
@@ -77,7 +78,8 @@ async function createMap() {
         overlay.redraw()
     })
     const zoom = createZoomControl(el("zoom"), tiles.maxLevel, (level) => controls.zoomTo(level))
-    applyZoomLevel = (level) => zoom.setLevel(level)
+    const scale = createScaleBar(el("scale"), created)
+    applyZoomLevel = (level) => { zoom.setLevel(level); scale.refresh() }
 
     // point the map at a location: (lon, lat) ends up in the viewport centre
     const centerOn = (lon: number, lat: number, requestedZoom: number) => {
@@ -93,7 +95,7 @@ async function createMap() {
         created.view.y = tiles.height + Math.round(gy - ty * tiles.height)
         applyTransform(created)
         overlay.redraw()
-        zoom.setLevel(z)
+        applyZoomLevel(z)
     }
 
     const resize_observer = new ResizeObserver(() => {
@@ -117,7 +119,7 @@ async function createMap() {
     resize_observer.observe(viewport)
 
     imJumpTo(created, 0, 0, Math.min(4, tiles.maxLevel))
-    zoom.setLevel(created.state.z)
+    applyZoomLevel(created.state.z)
 
     // Layers (different maps)
     let layerToken = 0
@@ -147,7 +149,7 @@ async function createMap() {
         activeLayer = id
         setActiveLayer(id)
         zoom.setMaxLevel(provider.maxLevel)
-        zoom.setLevel(z)
+        applyZoomLevel(z)
     }
 
     // Regions and paths from the datasets

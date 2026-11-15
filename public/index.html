@@ -14,6 +14,16 @@
     <aside id="missions"></aside>
     <div id="layers"></div>
     <div id="zoom"></div>
+    <aside id="legend" aria-label="Map legend">
+      <h2 class="lg-title">Legend</h2>
+      <ul class="lg-list">
+        <li><span class="lg-swatch lg-area"></span>Boxwork Cluster</li>
+        <li><span class="lg-swatch lg-poi"></span>Boxwork Terrain</li>
+        <li><span class="lg-swatch lg-landing"></span>Proposed landing site location</li>
+        <li><span class="lg-swatch lg-path"></span>Proposed routes from landing site to boxwork clusters</li>
+      </ul>
+      <div id="scale" class="lg-scale" aria-label="Map scale"></div>
+    </aside>
     <a id="about-link" href="./mission.html">About the mission</a>
     <script type="module" src="./js/interactive-map/map-init.js"></script>
     <script type="module" src="./js/data/data.js"></script>

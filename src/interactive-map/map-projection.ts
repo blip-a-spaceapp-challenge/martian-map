@@ -14,6 +14,18 @@ function matrixSize(tp: CachedTileProvider, z: number): [number, number] {
 
 const wrapLon = (lon: number) => ((lon + 180) % 360 + 360) % 360 - 180
 
+// Metres per canvas pixel at zoom level z.
+// The grid is equirectangular: one matrix width covers all 360° of longitude.
+// Mars radius matches the one data.ts uses for areas. Note that WMTS
+// scaleDenominator values here are computed with the Earth radius, so they
+// cannot be used for Mars.
+const MARS_RADIUS = 3_396_160 // meters
+
+function metersPerPixel(tp: CachedTileProvider, z: number): number {
+    const [mw] = matrixSize(tp, z)
+    return 2 * Math.PI * MARS_RADIUS / (mw * tp.width)
+}
+
 function lonLatToWorld(tp: CachedTileProvider, lon: number, lat: number, z: number): Pixel {
     const [mw, mh] = matrixSize(tp, z)
     return {
@@ -47,5 +59,5 @@ function viewportToLonLat(im: InteractiveMap, vx: number, vy: number) {
     }, im.state.z)
 }
 
-export { lonLatToWorld, worldToLonLat, lonLatToViewport, viewportToLonLat }
+export { lonLatToWorld, worldToLonLat, lonLatToViewport, viewportToLonLat, metersPerPixel }
 
