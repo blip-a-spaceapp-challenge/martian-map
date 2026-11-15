@@ -108,9 +108,11 @@ function imInitLayer(im: InteractiveMap) {
 	const rows = gridRows(im);
 	const cols = gridCols(im);
 
-	for (let j = 0; j < rows; ++j) {
-		for (let i = 0; i < cols; ++i) {
-			imDrawCell(im, i, j);
+	for (let l = 0; l < im.layers.length; ++l) {
+		for (let j = 0; j < rows; ++j) {
+			for (let i = 0; i < cols; ++i) {
+				imDrawCell(im, l, i, j);
+			}
 		}
 	}
 }
