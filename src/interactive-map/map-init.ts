@@ -1,6 +1,6 @@
 import { Path, Region } from "../data/data.ts"
 import type { State, View, InteractiveMap, TileProvider } from "./interactive-map.ts"
-import { gridRows, gridCols, createInteractiveMap, imDrawCell, imInitLayer, imJumpTo, imSlide } from "./interactive-map.ts"
+import { gridRows, gridCols, createInteractiveMap, imDrawCell, imOnTileLoaded, imInitLayer, imJumpTo, imSlide } from "./interactive-map.ts"
 import { bindControls } from "./map-controls.ts"
 import { createCachedTileProviderFor } from "./mars-trek.ts"
 
@@ -8,6 +8,7 @@ const LAYERS = [
 	{ id: "Mars_Viking_MDIM21_ClrMosaic_global_232m", opacity: 1 },
 	{ id: "Mars_MGS_MOLA_ClrShade_merge_global_463m", opacity: 0.3 },
 	{ id: "curiosity_ctx_mosaic", opacity: 0.4 },
+	{ id: "curiosity_hirise_mosaic", opacity: 0.8 },
 ];
 
 type MapState = {
@@ -20,12 +21,8 @@ var state: MapState | undefined;
 async function createMap() {
 	const providers = await Promise.all(LAYERS.map((layer, index) =>
 		createCachedTileProviderFor(layer.id, (x, y, z) => {
-			console.log(`Tile ${x} ${y} ${z} loaded!`)
-			if (state === undefined) return;
-			const i = x - state.map.state.x
-			const j = y - state.map.state.y
-			if (i < 0 || j < 0 || i >= gridCols(state.map) || j >= gridRows(state.map)) return;
-			imDrawCell(state.map, index, i, j)
+			console.log(`Tile ${x} ${y} ${z} loaded!`);
+			if (state !== undefined) imOnTileLoaded(state.map, index, x, y, z);
 		})));
 
 	const viewport = document.getElementById("viewport")
@@ -63,14 +60,11 @@ async function createMap() {
 	})
 	resize_observer.observe(viewport)
 
-
-	imJumpTo(map, 0, 0, 4)
-
-
 	state = {
 		map: map,
 		resize_observer: resize_observer
 	}
+	imJumpTo(map, 0, 0, 4)
 }
 
 void createMap()

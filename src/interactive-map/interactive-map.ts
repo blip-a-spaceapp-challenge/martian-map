@@ -98,12 +98,54 @@ const intDiv = (a: number, b: number): [number, number] => {
 const gridCols = (im: InteractiveMap): number => Math.ceil(im.layers[0].canvas.width / im.tileProvider.width);
 const gridRows = (im: InteractiveMap): number => Math.ceil(im.layers[0].canvas.height / im.tileProvider.height);
 
+const layerLevel = (im: InteractiveMap, provider: TileProvider): [number, number] => {
+	const lz = Math.min(im.state.z, provider.maxLevel);
+	return [lz, im.state.z - lz];
+};
+
 function imDrawCell(im: InteractiveMap, layer: number, i: number, j: number) {
 	const { provider, ctx } = im.layers[layer];
-	const tile = provider.get(im.state.x + i, im.state.y + j, im.state.z);
+	const [lz, dz] = layerLevel(im, provider);
+	const k = 2 ** dz;
+
+	const x = im.state.x + i;
+	const y = im.state.y + j;
+	const tx = Math.floor(x / k);
+	const ty = Math.floor(y / k);
+
+	const tile = provider.get(tx, ty, lz);
 	if (tile == null) return;
 
-	ctx.drawImage(tile, i * im.tileProvider.width, j * im.tileProvider.height);
+	const tw = im.tileProvider.width;
+	const th = im.tileProvider.height;
+	const dx = i * tw;
+	const dy = j * th;
+
+	ctx.clearRect(dx, dy, tw, th);
+
+	if (dz === 0) {
+		ctx.drawImage(tile, dx, dy);
+	} else {
+		const sw = tw / k;
+		const sh = th / k;
+		ctx.drawImage(tile, (x - tx * k) * sw, (y - ty * k) * sh, sw, sh, dx, dy, tw, th);
+	}
+}
+
+function imOnTileLoaded(im: InteractiveMap, layer: number, x: number, y: number, z: number) {
+	const [lz, dz] = layerLevel(im, im.layers[layer].provider);
+	if (z !== lz) return;
+
+	const k = 2 ** dz;
+	const i0 = x * k - im.state.x;
+	const j0 = y * k - im.state.y;
+	const iEnd = Math.min(gridCols(im), i0 + k);
+	const jEnd = Math.min(gridRows(im), j0 + k);
+	for (let j = Math.max(0, j0); j < jEnd; ++j) {
+		for (let i = Math.max(0, i0); i < iEnd; ++i) {
+			imDrawCell(im, layer, i, j);
+		}
+	}
 }
 
 function imInitLayer(im: InteractiveMap) {
@@ -191,5 +233,5 @@ function imSlide(im: InteractiveMap, dx: number, dy: number) {
 
 
 export type { State, View, Layer, InteractiveMap, TileProvider };
-export { gridRows, gridCols, createInteractiveMap, imDrawCell, imJumpTo, imGridShift, imInitLayer, imSlide, intDiv };
+export { gridRows, gridCols, createInteractiveMap, imDrawCell, imOnTileLoaded, imJumpTo, imGridShift, imInitLayer, imSlide, intDiv };
 

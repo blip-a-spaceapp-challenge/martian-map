@@ -53,7 +53,7 @@ function bindControls(map: InteractiveMap, viewport: HTMLDivElement) {
     viewport.addEventListener("wheel", (e) => {
         e.preventDefault();
         const { tileProvider: tp, state, view } = map;
-        const z = Math.max(0, Math.min(tp.maxLevel, state.z + (e.deltaY < 0 ? 1 : -1)));
+        const z = Math.max(0, Math.min(map.maxLevel, state.z + (e.deltaY < 0 ? 1 : -1)));
         if (z === state.z) return;
 
         if (raf) { cancelAnimationFrame(raf); flush(); }
