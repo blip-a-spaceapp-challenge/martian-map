@@ -12,6 +12,9 @@
     "rewriteRelativeImportExtensions": true,
     "types": []
   },
-  "include": ["src/interactive-map"]
+  "include": [
+      "src/data",
+      "src/interactive-map"
+  ]
 }
 
