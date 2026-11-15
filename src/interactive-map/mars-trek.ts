@@ -1,8 +1,8 @@
 // import type { State, View, InteractiveMap, TileProvider } from "./interactive-map.ts"
 // import {  } from "./interactive-map.ts"
 
-const TREK_MARS_EQ = "https://trek.nasa.gov/tiles/Mars/EQ";
-
+const TREK_MARS_EQ = "https://trek.nasa.gov/tiles/Mars/EQ"
+const MAX_CACHE_SIZE = 128
 
 
 type WMTSCapabilities = {
@@ -119,6 +119,12 @@ async function loadTile(cache: Map<TileKey, ImageBitmap | null>, pending: Set<Ti
     cache.set(key, tile)
     pending.delete(key)
     onLoad?.(x, y, z)
+    
+    while (cache.size > MAX_CACHE_SIZE) {
+        const first = cache.keys().next()
+        if (first.done) break;
+        cache.delete(first.value)
+    }
 }
 async function createCachedTileProviderFor(productId: string, onLoad?: (x: number, y: number, z: number) => void): Promise<CachedTileProvider> {
     const capabilities = await fetchWMTSCapabilities(productId)
