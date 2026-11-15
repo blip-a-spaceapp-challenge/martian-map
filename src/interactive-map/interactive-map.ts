@@ -189,5 +189,5 @@ function imSlide(im: InteractiveMap, dx: number, dy: number) {
 
 
 export type { State, View, Layer, InteractiveMap, TileProvider };
-export { createInteractiveMap, imDrawCell, imJumpTo, imGridShift, imInitLayer, imSlide, intDiv };
+export { gridRows, gridCols, createInteractiveMap, imDrawCell, imJumpTo, imGridShift, imInitLayer, imSlide, intDiv };
 
