@@ -19,8 +19,10 @@ type Layer = {
 };
 
 type InteractiveMap = {
-	canvas: HTMLCanvasElement,
-	canvasCtx: CanvasRenderingContext2D,
+	root: HTMLDivElement,
+	layers: Layer[],
+	// canvas: HTMLCanvasElement,
+	// canvasCtx: CanvasRenderingContext2D,
 	resCanvas: HTMLCanvasElement,
 	resCanvasCtx: CanvasRenderingContext2D,
 	state: State,
@@ -49,27 +51,39 @@ function createCanvas(width: number, height: number): HTMLCanvasElement {
 
 // createInteractiveMap - creates InteractiveMap.
 // Use parent.appendChild(mapName.canvas) to add to DOM.
-function createInteractiveMap(tileProvider: TileProvider, view: View, clearDraw: boolean = true): InteractiveMap | null {
-	// tile only partially inside view should still fully fit in canvas, from both sides
-	const canvas = createCanvas(
-		(Math.ceil(view.width / tileProvider.width) + 2) * tileProvider.width,
-		(Math.ceil(view.height / tileProvider.height) + 2) * tileProvider.height);
-	const resCanvas = createCanvas(canvas.width, canvas.height);
+function createInteractiveMap(providers: TileProvider[], view: View, clearDraw: boolean = true): InteractiveMap | null {
+	if (providers.length === 0) return null;
+	const base = providers[0];
+	if (providers.some(p => p.width !== base.width || p.height !== base.height)) return null;
 
-	const canvasCtx = canvas.getContext("2d");
-	const resCanvasCtx = resCanvas.getContext("2d");
-	if (canvasCtx == null || resCanvasCtx == null) {
-		return null;
+	const w = (Math.ceil(view.width / base.width) + 2) * base.width;
+	const h = (Math.ceil(view.height / base.height) + 2) * base.height
+
+	const root = document.createElement("div");
+	root.className = "im-root";
+
+	const layers: Layer[] = [];
+	for (const provider of providers) {
+		const canvas = createCanvas(w, h);
+		canvas.className = "im-layer";
+		const ctx = canvas.getContext("2d");
+		if (ctx == null) return null;
+		root.appendChild(canvas);
+		layers.push({ provider, canvas, ctx })
 	}
 
+	const resCanvas = createCanvas(w, h);
+	const resCanvasCtx = resCanvas.getContext("2d");
+	if (resCanvasCtx == null) return null;
+
 	return {
-		canvas,
-		canvasCtx,
+		root,
+		layers,
 		resCanvas,
 		resCanvasCtx,
 		state: { x: NaN, y: NaN, z: NaN },
 		view,
-		tileProvider,
+		tileProvider: base,
 		clearDraw,
 	};
 }
