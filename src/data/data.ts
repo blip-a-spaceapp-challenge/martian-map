@@ -109,7 +109,7 @@ async function loadLanding(code: string, paths: Map<string, number>): Promise<La
     for (const [lcode, n] of paths) {
         let paths = []
         for (let i = 1; i <= n; i++) {
-            paths.push(await parsePath(`${code}/PathTo${lcode}${n}`))
+            paths.push(await parsePath(`${code}/PathTo${lcode}${i}`))
         }
         pathsToLocations.set(lcode, paths)
     }
