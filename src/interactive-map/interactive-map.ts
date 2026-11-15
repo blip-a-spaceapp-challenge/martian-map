@@ -12,6 +12,12 @@ type View = {
 	height: number,
 }
 
+type Layer = {
+	provider: TileProvider,
+	canvas: HTMLCanvasElement,
+	ctx: CanvasRenderingContext2D,
+}
+
 type InteractiveMap = {
 	canvas: HTMLCanvasElement,
 	canvasCtx: CanvasRenderingContext2D,
