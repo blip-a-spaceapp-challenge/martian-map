@@ -146,6 +146,8 @@ async function loadTile(cache: Map<TileKey, ImageBitmap | null>, pending: Set<Ti
         const response = await fetch(url)
         if (!response.ok) {
             console.log("Couldnt load tile! ", response.status)
+            cache.set(key, null);
+            return;
         } else {
             tile = await createImageBitmap(await response.blob())
             console.log("Tile loaded successfuly! ", tile)
@@ -161,6 +163,8 @@ async function loadTile(cache: Map<TileKey, ImageBitmap | null>, pending: Set<Ti
     while (cache.size > MAX_CACHE_SIZE) {
         const first = cache.keys().next()
         if (first.done) break;
+        const image = cache.get(first.value)
+        if (image !== undefined && image != null) image.close()
         cache.delete(first.value)
     }
 }
