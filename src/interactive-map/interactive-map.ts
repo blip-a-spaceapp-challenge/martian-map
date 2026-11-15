@@ -31,6 +31,7 @@ type InteractiveMap = {
 	tileProvider: TileProvider,
 
 	clearDraw: boolean,
+	maxLevel: number,
 };
 
 type TileProvider = {
