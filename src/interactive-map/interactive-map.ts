@@ -93,18 +93,15 @@ const intDiv = (a: number, b: number): [number, number] => {
 	return [q, a - q * b];
 }
 
-const gridCols = (im: InteractiveMap): number => Math.ceil(im.canvas.width / im.tileProvider.width);
-const gridRows = (im: InteractiveMap): number => Math.ceil(im.canvas.height / im.tileProvider.height);
+const gridCols = (im: InteractiveMap): number => Math.ceil(im.layers[0].canvas.width / im.tileProvider.width);
+const gridRows = (im: InteractiveMap): number => Math.ceil(im.layers[0].canvas.height / im.tileProvider.height);
 
-function imDrawCell(im: InteractiveMap, i: number, j: number) {
-	const tile = im.tileProvider.get(im.state.x + i, im.state.y + j, im.state.z);
+function imDrawCell(im: InteractiveMap, layer: number, i: number, j: number) {
+	const { provider, ctx } = im.layers[layer];
+	const tile = provider.get(im.state.x + i, im.state.y + j, im.state.z);
 	if (tile == null) return;
 
-	im.canvasCtx.drawImage(
-		tile,
-		i * im.tileProvider.width,
-		j * im.tileProvider.height,
-	);
+	ctx.drawImage(tile, i * im.tileProvider.width, j * im.tileProvider.height);
 }
 
 function imInitLayer(im: InteractiveMap) {
