@@ -123,11 +123,13 @@ function imJumpTo(im: InteractiveMap, x: number, y: number, z: number, c: number
 	const oy = (im.state.y * s - y) * im.tileProvider.height;
 
 	if (im.clearDraw && Number.isFinite(s) && s !== 1) {
-		im.resCanvasCtx.clearRect(0, 0, im.resCanvas.width, im.resCanvas.height);
-		im.resCanvasCtx.drawImage(im.canvas, 0, 0);
+		for (const { canvas, ctx } of im.layers) {
+			im.resCanvasCtx.clearRect(0, 0, im.resCanvas.width, im.resCanvas.height);
+			im.resCanvasCtx.drawImage(canvas, 0, 0);
 
-		im.canvasCtx.clearRect(0, 0, im.canvas.width, im.canvas.height);
-		im.canvasCtx.drawImage(im.resCanvas, ox, oy, im.resCanvas.width * s, im.resCanvas.height * s);
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			ctx.drawImage(im.resCanvas, ox, oy, im.resCanvas.width * s, im.resCanvas.height * s);
+		}
 	}
 	im.state.x = x;
 	im.state.y = y;
