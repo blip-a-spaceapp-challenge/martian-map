@@ -23,6 +23,7 @@ type InteractiveMap = {
 	tileProvider: TileProvider,
 
 	clearDraw: boolean,
+    scale: number
 };
 
 type TileProvider = {
@@ -65,6 +66,7 @@ function createInteractiveMap(tileProvider: TileProvider, view: View, clearDraw:
 		view,
 		tileProvider,
 		clearDraw,
+        scale: 1,
 	};
 }
 

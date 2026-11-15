@@ -50,3 +50,177 @@ body {
   pointer-events: none;
 }
 
+#missions {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
+  width: 35vw;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background: rgb(10 10 14 / 35%);
+  border: 1px solid rgb(255 255 255 / 15%);
+  backdrop-filter: blur(6px);
+}
+
+.mp-header { display: flex; align-items: baseline; justify-content: space-between; }
+.mp-title { margin: 0; font-size: 16px; }
+.mp-count { font: 12px monospace; opacity: 0.7; }
+
+.mp-list {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mp-target {
+  display: flex;
+  align-items: stretch;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 10%);
+  border: 1px solid transparent;
+}
+.mp-target:hover { background: rgb(255 255 255 / 18%); }
+.mp-target.selected { border-color: #ff7a45; background: rgb(255 122 69 / 20%); }
+
+.mp-target-body {
+  flex: 1;
+  padding: 8px 10px;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.mp-target-name { font-weight: 600; }
+.mp-target-meta { font: 11px monospace; opacity: 0.7; }
+.mp-target-desc { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+
+.mp-del {
+  width: 36px;
+  color: #ff8a8a;
+  background: none;
+  border: 0;
+  border-left: 1px solid rgb(255 255 255 / 10%);
+  cursor: pointer;
+}
+.mp-del:hover { background: rgb(255 80 80 / 25%); }
+
+.mp-form { display: flex; gap: 8px; }
+.mp-input {
+  flex: 1;
+  padding: 8px 10px;
+  color: inherit;
+  border-radius: 8px;
+  border: 1px solid rgb(255 255 255 / 20%);
+  background: rgb(0 0 0 / 35%);
+}
+.mp-add {
+  width: 40px;
+  font-size: 20px;
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  background: rgb(255 122 69 / 70%);
+  cursor: pointer;
+}
+
+.mp-target { cursor: grab; }
+.mp-target.dragging { opacity: 0.4; }
+.mp-target.drop-before { box-shadow: 0 -3px 0 #ff7a45; }
+.mp-target.drop-after { box-shadow: 0 3px 0 #ff7a45; }
+
+.mp-input.invalid { border-color: #ff5a5a; background: rgb(255 80 80 / 15%); }
+
+#layers {
+  position: fixed;
+  left: 8px;
+  top: 56px;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 10px;
+  background: rgb(10 10 14 / 35%);
+  border: 1px solid rgb(255 255 255 / 15%);
+  backdrop-filter: blur(6px);
+}
+#layers button {
+  padding: 6px 12px;
+  color: #fff;
+  font: 12px system-ui, sans-serif;
+  background: rgb(255 255 255 / 10%);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+}
+#layers button:hover { background: rgb(255 255 255 / 18%); }
+#layers button.active { border-color: #ff7a45; background: rgb(255 122 69 / 25%); }
+
+.mp-target-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mp-target-col .mp-target-body { flex: none; }
+.mp-target-desc {
+  padding: 0 10px 4px;
+  font-size: 12px;
+  opacity: 0.85;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.mp-target-desc.open { display: block; -webkit-line-clamp: unset; }
+.mp-more {
+  align-self: flex-start;
+  margin: 0 10px 8px;
+  padding: 0;
+  color: #ff9a6a;
+  font: 12px system-ui, sans-serif;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.mp-more:hover { text-decoration: underline; }
+
+#zoom {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgb(10 10 14 / 35%);
+  border: 1px solid rgb(255 255 255 / 15%);
+  backdrop-filter: blur(6px);
+  font: 12px system-ui, sans-serif;
+}
+#zoom label {
+  display: grid;
+  grid-template-columns: auto 180px 56px;
+  align-items: center;
+  gap: 8px;
+}
+#zoom input[type="range"] { accent-color: #ff7a45; }
+#zoom output { font: 11px monospace; opacity: 0.8; text-align: right; }
+#about-link {
+  position: fixed;
+  left: 12px;
+  bottom: 72px;
+  padding: 8px 14px;
+  color: #fff;
+  font: 12px system-ui, sans-serif;
+  text-decoration: none;
+  border-radius: 10px;
+  background: rgb(10 10 14 / 35%);
+  border: 1px solid rgb(255 255 255 / 15%);
+  backdrop-filter: blur(6px);
+}
+#about-link:hover { background: rgb(255 255 255 / 18%); }
