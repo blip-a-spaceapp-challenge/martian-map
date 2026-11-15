@@ -100,6 +100,8 @@ const gridRows = (im: InteractiveMap): number => Math.ceil(im.layers[0].canvas.h
 
 function imDrawCell(im: InteractiveMap, layer: number, i: number, j: number) {
 	const { provider, ctx } = im.layers[layer];
+	// a product that has no tiles this deep would only answer with 404s
+	if (im.state.z > provider.maxLevel) return;
 	const tile = provider.get(im.state.x + i, im.state.y + j, im.state.z);
 	if (tile == null) return;
 

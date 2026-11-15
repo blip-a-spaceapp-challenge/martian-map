@@ -12,7 +12,8 @@ import { createZoomControl } from "./zoom-control.ts"
 import { createScaleBar } from "./scale-bar.ts"
 import { fetchLayers } from "./layers.ts"
 import type { LayerInfo } from "./layers.ts"
-import { createLayerPanel } from "./layer-panel.ts"
+import { createLayerList } from "./layer-list.ts"
+import type { LayerState } from "./layer-list.ts"
 import { loadMission, createMissionPanel } from "./mission-panel.ts"
 import type { Target } from "./mission-panel.ts"
 
@@ -56,9 +57,15 @@ async function createMap() {
     }
 
     const providers = await Promise.all(layers.map((info, index) => loadLayer(info, index)))
-    const tiles = providers[0]          // all layers share one tile grid
+
+    // Every product shares the same global tile grid, so the deepest one gives
+    // the map its grid and how far the user can zoom in. Layers that stop
+    // earlier simply stay empty at deeper levels.
+    const tiles = providers.reduce((a, b) => (b.maxLevel > a.maxLevel ? b : a))
+
     const view = { x: 0, y: 0, width: viewport.clientWidth, height: viewport.clientHeight }
     const created = createInteractiveMap(providers, view) ?? (() => { throw new Error("cant create map") })()
+    created.tileProvider = tiles
     mapRef.current = created
     viewport.appendChild(created.root)
 
@@ -118,27 +125,17 @@ async function createMap() {
     imJumpTo(created, 0, 0, Math.min(4, tiles.maxLevel))
     applyZoomLevel(created.state.z)
 
-    // Layers: every product has its own canvas stacked inside .im-root.
-    // The panel picks the visible one; opacity is the hook for blending
-    // several layers together later on.
-    const showLayer = (index: number) => {
-        created.layers.forEach((layer, i) => {
-            layer.canvas.style.opacity = i === index ? "1" : "0"
-        })
+    // Layers: every product has its own canvas stacked inside .im-root,
+    // drawn bottom to top in the order of the list.
+    const applyLayer = (index: number, state: LayerState) => {
+        const layer = created.layers[index]
+        if (!layer) return
+        layer.canvas.style.display = state.visible ? "" : "none"
+        layer.canvas.style.opacity = String(state.opacity)
     }
 
-    let activeLayer = layers[0].id
-    const setActiveLayer = createLayerPanel(el("layers"), layers, activeLayer, (id) => selectLayer(id))
-
-    function selectLayer(id: string) {
-        const index = layers.findIndex(l => l.id === id)
-        if (index < 0 || id === activeLayer) return
-        activeLayer = id
-        showLayer(index)
-        setActiveLayer(id)
-    }
-
-    showLayer(0)
+    createLayerList(el("layers"), layers, applyLayer)
+    layers.forEach((layer, index) => applyLayer(index, layer))
 
     // Regions and paths from the datasets
     const datasets = await loadDatasets()
