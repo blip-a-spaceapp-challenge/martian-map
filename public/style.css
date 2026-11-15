@@ -24,14 +24,14 @@ body {
 }
 
 /* The canvas is a large surface moved around with a CSS transform. */
-#viewport .map-root {
+#viewport .im-root {
   position: absolute;
   left: 0;
   top: 0;
   will-change: transform;
 }
 
-.map-layer {
+.im-layer {
 		position: absolute;
 		left: 0;
 		top: 0;
