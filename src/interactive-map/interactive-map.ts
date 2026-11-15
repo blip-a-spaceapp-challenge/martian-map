@@ -24,6 +24,7 @@ type InteractiveMap = {
 type TileProvider = {
 	width: number,
 	height: number,
+    maxLevel: number,
 	get: (x: number, y: number, z: number) => ImageBitmap | null,
 }
 

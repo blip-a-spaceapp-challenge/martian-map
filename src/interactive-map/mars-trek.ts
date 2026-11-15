@@ -2,7 +2,7 @@
 // import {  } from "./interactive-map.ts"
 
 const TREK_MARS_EQ = "https://trek.nasa.gov/tiles/Mars/EQ"
-const MAX_CACHE_SIZE = 128
+const MAX_CACHE_SIZE = 512
 
 
 type WMTSCapabilities = {
@@ -87,6 +87,7 @@ const tileKey = (x: number, y: number, z: number): TileKey => `${z}/${x}/${y}`
 type CachedTileProvider = {
     width: number,
     height: number,
+    maxLevel: number,
     capabilities: WMTSCapabilities,
 
     pending: Set<TileKey>,
@@ -138,6 +139,7 @@ async function createCachedTileProviderFor(productId: string, onLoad?: (x: numbe
     return {
         width: width,
         height: height,
+        maxLevel: capabilities.maxLevel,
         capabilities: capabilities,
         pending: pending,
         cache: cache,
