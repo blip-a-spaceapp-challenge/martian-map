@@ -10,11 +10,19 @@ type View = {
 	y: number,
 	width: number,
 	height: number,
-}
+};
+
+type Layer = {
+	provider: TileProvider,
+	canvas: HTMLCanvasElement,
+	ctx: CanvasRenderingContext2D,
+};
 
 type InteractiveMap = {
-	canvas: HTMLCanvasElement,
-	canvasCtx: CanvasRenderingContext2D,
+	root: HTMLDivElement,
+	layers: Layer[],
+	// canvas: HTMLCanvasElement,
+	// canvasCtx: CanvasRenderingContext2D,
 	resCanvas: HTMLCanvasElement,
 	resCanvasCtx: CanvasRenderingContext2D,
 	state: State,
@@ -31,7 +39,7 @@ type TileProvider = {
 	height: number,
 	maxLevel: number,
 	get: (x: number, y: number, z: number) => ImageBitmap | null,
-}
+};
 
 function createCanvas(width: number, height: number): HTMLCanvasElement {
 	const canvas = document.createElement("canvas");
@@ -44,27 +52,39 @@ function createCanvas(width: number, height: number): HTMLCanvasElement {
 
 // createInteractiveMap - creates InteractiveMap.
 // Use parent.appendChild(mapName.canvas) to add to DOM.
-function createInteractiveMap(tileProvider: TileProvider, view: View, clearDraw: boolean = true): InteractiveMap | null {
-	// tile only partially inside view should still fully fit in canvas, from both sides
-	const canvas = createCanvas(
-		(Math.ceil(view.width / tileProvider.width) + 2) * tileProvider.width,
-		(Math.ceil(view.height / tileProvider.height) + 2) * tileProvider.height);
-	const resCanvas = createCanvas(canvas.width, canvas.height);
+function createInteractiveMap(providers: TileProvider[], view: View, clearDraw: boolean = true): InteractiveMap | null {
+	if (providers.length === 0) return null;
+	const base = providers[0];
+	if (providers.some(p => p.width !== base.width || p.height !== base.height)) return null;
 
-	const canvasCtx = canvas.getContext("2d");
-	const resCanvasCtx = resCanvas.getContext("2d");
-	if (canvasCtx == null || resCanvasCtx == null) {
-		return null;
+	const w = (Math.ceil(view.width / base.width) + 2) * base.width;
+	const h = (Math.ceil(view.height / base.height) + 2) * base.height
+
+	const root = document.createElement("div");
+	root.className = "im-root";
+
+	const layers: Layer[] = [];
+	for (const provider of providers) {
+		const canvas = createCanvas(w, h);
+		canvas.className = "im-layer";
+		const ctx = canvas.getContext("2d");
+		if (ctx == null) return null;
+		root.appendChild(canvas);
+		layers.push({ provider, canvas, ctx })
 	}
 
+	const resCanvas = createCanvas(w, h);
+	const resCanvasCtx = resCanvas.getContext("2d");
+	if (resCanvasCtx == null) return null;
+
 	return {
-		canvas,
-		canvasCtx,
+		root,
+		layers,
 		resCanvas,
 		resCanvasCtx,
 		state: { x: NaN, y: NaN, z: NaN },
 		view,
-		tileProvider,
+		tileProvider: base,
 		clearDraw,
         scale: 1,
 	};
@@ -75,27 +95,26 @@ const intDiv = (a: number, b: number): [number, number] => {
 	return [q, a - q * b];
 }
 
-const gridCols = (im: InteractiveMap): number => Math.ceil(im.canvas.width / im.tileProvider.width);
-const gridRows = (im: InteractiveMap): number => Math.ceil(im.canvas.height / im.tileProvider.height);
+const gridCols = (im: InteractiveMap): number => Math.ceil(im.layers[0].canvas.width / im.tileProvider.width);
+const gridRows = (im: InteractiveMap): number => Math.ceil(im.layers[0].canvas.height / im.tileProvider.height);
 
-function imDrawCell(im: InteractiveMap, i: number, j: number) {
-	const tile = im.tileProvider.get(im.state.x + i, im.state.y + j, im.state.z);
+function imDrawCell(im: InteractiveMap, layer: number, i: number, j: number) {
+	const { provider, ctx } = im.layers[layer];
+	const tile = provider.get(im.state.x + i, im.state.y + j, im.state.z);
 	if (tile == null) return;
 
-	im.canvasCtx.drawImage(
-		tile,
-		i * im.tileProvider.width,
-		j * im.tileProvider.height,
-	);
+	ctx.drawImage(tile, i * im.tileProvider.width, j * im.tileProvider.height);
 }
 
 function imInitLayer(im: InteractiveMap) {
 	const rows = gridRows(im);
 	const cols = gridCols(im);
 
-	for (let j = 0; j < rows; ++j) {
-		for (let i = 0; i < cols; ++i) {
-			imDrawCell(im, i, j);
+	for (let l = 0; l < im.layers.length; ++l) {
+		for (let j = 0; j < rows; ++j) {
+			for (let i = 0; i < cols; ++i) {
+				imDrawCell(im, l, i, j);
+			}
 		}
 	}
 }
@@ -106,11 +125,13 @@ function imJumpTo(im: InteractiveMap, x: number, y: number, z: number, c: number
 	const oy = (im.state.y * s - y) * im.tileProvider.height;
 
 	if (im.clearDraw && Number.isFinite(s) && s !== 1) {
-		im.resCanvasCtx.clearRect(0, 0, im.resCanvas.width, im.resCanvas.height);
-		im.resCanvasCtx.drawImage(im.canvas, 0, 0);
+		for (const { canvas, ctx } of im.layers) {
+			im.resCanvasCtx.clearRect(0, 0, im.resCanvas.width, im.resCanvas.height);
+			im.resCanvasCtx.drawImage(canvas, 0, 0);
 
-		im.canvasCtx.clearRect(0, 0, im.canvas.width, im.canvas.height);
-		im.canvasCtx.drawImage(im.resCanvas, ox, oy, im.resCanvas.width * s, im.resCanvas.height * s);
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			ctx.drawImage(im.resCanvas, ox, oy, im.resCanvas.width * s, im.resCanvas.height * s);
+		}
 	}
 	im.state.x = x;
 	im.state.y = y;
@@ -135,9 +156,11 @@ function imGridShift(im: InteractiveMap, nx: number, ny: number) {
 		return;
 	}
 
-	if (im.clearDraw) im.canvasCtx.globalCompositeOperation = "copy";
-	im.canvasCtx.drawImage(im.canvas, -nx * im.tileProvider.width, -ny * im.tileProvider.height);
-	if (im.clearDraw) im.canvasCtx.globalCompositeOperation = "source-over";
+	for (const { canvas, ctx } of im.layers) {
+		if (im.clearDraw) ctx.globalCompositeOperation = "copy";
+		ctx.drawImage(canvas, -nx * im.tileProvider.width, -ny * im.tileProvider.height);
+		if (im.clearDraw) ctx.globalCompositeOperation = "source-over";
+	}
 
 	for (let j = 0; j < rows; ++j) {
 		const oj = j + ny;
@@ -146,7 +169,7 @@ function imGridShift(im: InteractiveMap, nx: number, ny: number) {
 			const oi = i + nx;
 			const colIsNew = oi < 0 || oi >= cols;
 			if (rowIsNew || colIsNew) {
-				imDrawCell(im, i, j);
+				for (let l = 0; l < im.layers.length; ++l) imDrawCell(im, l, i, j);
 			}
 		}
 	}
@@ -167,6 +190,6 @@ function imSlide(im: InteractiveMap, dx: number, dy: number) {
 
 
 
-export type { State, View, InteractiveMap, TileProvider };
-export { createInteractiveMap, imDrawCell, imJumpTo, imGridShift, imInitLayer, imSlide, intDiv };
+export type { State, View, Layer, InteractiveMap, TileProvider };
+export { gridRows, gridCols, createInteractiveMap, imDrawCell, imJumpTo, imGridShift, imInitLayer, imSlide, intDiv };
 

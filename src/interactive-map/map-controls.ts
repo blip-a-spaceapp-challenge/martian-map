@@ -3,9 +3,10 @@ import type { InteractiveMap } from "./interactive-map.ts"
 import { imJumpTo, imSlide } from "./interactive-map.ts"
 
 function applyTransform(map: InteractiveMap) {
+    // one transform for the whole stack: every layer canvas moves together
     const px = map.view.x - map.tileProvider.width
     const py = map.view.y - map.tileProvider.height
-    map.canvas.style.transform = `translate3d(${-px}px, ${-py}px, 0)`
+    map.root.style.transform = `translate3d(${-px}px, ${-py}px, 0)`
 }
 
 type MapControls = {

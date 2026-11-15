@@ -1,7 +1,7 @@
 import { loadDatasets } from "../data/data.ts"
 import type { Point } from "../data/data.ts"
 import type { InteractiveMap } from "./interactive-map.ts"
-import { createInteractiveMap, imDrawCell, imJumpTo } from "./interactive-map.ts"
+import { createInteractiveMap, gridCols, gridRows, imDrawCell, imJumpTo } from "./interactive-map.ts"
 import type { MapControls } from "./map-controls.ts"
 import { applyTransform, bindControls } from "./map-controls.ts"
 import { createOverlay, shapesFrom } from "./map-overlay.ts"
@@ -40,32 +40,27 @@ async function createMap() {
     const layers = await fetchLayers()
     if (layers.length === 0) throw new Error("no layers")
 
-    // the map is created after the first provider, but the tile callback is needed earlier
+    // the map is created after the providers, but the tile callback is needed earlier
     const mapRef: { current?: InteractiveMap } = {}
-    let tiles: CachedTileProvider
 
-    // tile provider for a layer; redraws cells only while it is active
-    async function loadLayer(info: LayerInfo): Promise<CachedTileProvider> {
-        const provider: CachedTileProvider = await createCachedTileProviderFor(info.productId, (x, y, z) => {
+    // one provider per layer; each one redraws cells of its own canvas
+    async function loadLayer(info: LayerInfo, index: number): Promise<CachedTileProvider> {
+        return createCachedTileProviderFor(info.productId, (x, y, z) => {
             const map = mapRef.current
-            if (!map || map.tileProvider !== provider) return
-            if (z !== map.state.z) return
+            if (!map || z !== map.state.z) return
             const i = x - map.state.x
             const j = y - map.state.y
-            if (i < 0 || j < 0) return
-            if (i >= map.canvas.width / provider.width) return
-            if (j >= map.canvas.height / provider.height) return
-            imDrawCell(map, i, j)
+            if (i < 0 || j < 0 || i >= gridCols(map) || j >= gridRows(map)) return
+            imDrawCell(map, index, i, j)
         })
-        return provider
     }
 
-    tiles = await loadLayer(layers[0])
-    const view = { x: 0, y: 0, width: 1024, height: 1024 }
-    const created = createInteractiveMap(tiles, view) ?? (() => { throw new Error("cant create map") })()
+    const providers = await Promise.all(layers.map((info, index) => loadLayer(info, index)))
+    const tiles = providers[0]          // all layers share one tile grid
+    const view = { x: 0, y: 0, width: viewport.clientWidth, height: viewport.clientHeight }
+    const created = createInteractiveMap(providers, view) ?? (() => { throw new Error("cant create map") })()
     mapRef.current = created
-    created.canvas.className = "map-canvas"
-    viewport.appendChild(created.canvas)
+    viewport.appendChild(created.root)
 
     const overlay = createOverlay(created, viewport)
 
@@ -108,10 +103,12 @@ async function createMap() {
         const rows = Math.ceil(created.view.height / created.tileProvider.height) + 2
         const w = cols * created.tileProvider.width
         const h = rows * created.tileProvider.height
-        if (w === created.canvas.width && h === created.canvas.height) return
+        if (w === created.resCanvas.width && h === created.resCanvas.height) return
 
-        created.canvas.width = w
-        created.canvas.height = h
+        for (const layer of created.layers) {
+            layer.canvas.width = w
+            layer.canvas.height = h
+        }
         created.resCanvas.width = w
         created.resCanvas.height = h
         controls.refresh()
@@ -121,36 +118,27 @@ async function createMap() {
     imJumpTo(created, 0, 0, Math.min(4, tiles.maxLevel))
     applyZoomLevel(created.state.z)
 
-    // Layers (different maps)
-    let layerToken = 0
-    let activeLayer = layers[0].id
-    const setActiveLayer = createLayerPanel(el("layers"), layers, activeLayer, (id) => void switchLayer(id))
-
-    async function switchLayer(id: string) {
-        const info = layers.find(l => l.id === id)
-        if (!info || id === activeLayer) return
-        const token = ++layerToken
-        const provider = await loadLayer(info)
-        if (token !== layerToken) return      // another layer was picked while this one was loading
-
-        // position in the new layer: if it has fewer levels, lift the tile coordinates
-        const z = Math.min(created.state.z, provider.maxLevel)
-        const shift = 2 ** (created.state.z - z)
-        const x = Math.floor(created.state.x / shift)
-        const y = Math.floor(created.state.y / shift)
-
-        tiles = provider
-        created.tileProvider = provider
-        created.state.x = x
-        created.state.y = y
-        created.state.z = z
-        controls.refresh()
-
-        activeLayer = id
-        setActiveLayer(id)
-        zoom.setMaxLevel(provider.maxLevel)
-        applyZoomLevel(z)
+    // Layers: every product has its own canvas stacked inside .im-root.
+    // The panel picks the visible one; opacity is the hook for blending
+    // several layers together later on.
+    const showLayer = (index: number) => {
+        created.layers.forEach((layer, i) => {
+            layer.canvas.style.opacity = i === index ? "1" : "0"
+        })
     }
+
+    let activeLayer = layers[0].id
+    const setActiveLayer = createLayerPanel(el("layers"), layers, activeLayer, (id) => selectLayer(id))
+
+    function selectLayer(id: string) {
+        const index = layers.findIndex(l => l.id === id)
+        if (index < 0 || id === activeLayer) return
+        activeLayer = id
+        showLayer(index)
+        setActiveLayer(id)
+    }
+
+    showLayer(0)
 
     // Regions and paths from the datasets
     const datasets = await loadDatasets()

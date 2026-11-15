@@ -23,12 +23,19 @@ body {
   cursor: grabbing;
 }
 
-/* The canvas is a large surface moved around with a CSS transform. */
-#viewport .map-canvas {
+/* The map is a stack of layer canvases moved around with a CSS transform. */
+#viewport .im-root {
   position: absolute;
   left: 0;
   top: 0;
   will-change: transform;
+}
+
+/* Every product is its own canvas; the stack order is DOM order. */
+#viewport .im-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 
 #viewport .overlay-canvas {
