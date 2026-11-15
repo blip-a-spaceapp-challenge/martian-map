@@ -35,10 +35,21 @@ function createLayerList(
         name.className = "ll-name"
         name.textContent = layer.name
 
+        const text = document.createElement("span")
+        text.className = "ll-text"
+        text.append(name)
+
+        if (layer.hint) {
+            const hint = document.createElement("span")
+            hint.className = "ll-hint"
+            hint.textContent = layer.hint
+            text.append(hint)
+        }
+
         const value = document.createElement("output")
         value.className = "ll-value"
 
-        head.append(toggle, name, value)
+        head.append(toggle, text, value)
         head.title = layer.description
 
         const slider = document.createElement("input")

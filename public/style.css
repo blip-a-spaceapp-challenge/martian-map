@@ -224,12 +224,22 @@ body {
   accent-color: #ff7a45;
 }
 
-.ll-name {
+.ll-text {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ll-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.ll-hint {
+  font-size: 10px;
+  opacity: 0.55;
 }
 
 .ll-value {
