@@ -6,6 +6,7 @@ import { createCachedTileProviderFor } from "./mars-trek.ts"
 
 const LAYERS = [
 	{ id: "Mars_Viking_MDIM21_ClrMosaic_global_232m", opacity: 1 },
+	{ id: "curiosity_hirise_mosaic", opacity: 0.5 },
 ];
 
 type MapState = {
