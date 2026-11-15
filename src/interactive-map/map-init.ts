@@ -71,6 +71,7 @@ async function createMap() {
     panelRoot.addEventListener("target-add", (e) => console.log("added", (e as CustomEvent<Target>).detail))
     panelRoot.addEventListener("target-remove", (e) => console.log("removed", (e as CustomEvent<Target>).detail))
 
+
     const resize_observer = new ResizeObserver(() => {
         const cols = Math.ceil(map.canvas.clientWidth / map.tileProvider.width) + 2
         const rows = Math.ceil(map.canvas.clientHeight / map.tileProvider.height) + 2
@@ -88,7 +89,6 @@ async function createMap() {
 
     imJumpTo(map, 0, 0, 4)
     imInitLayer(map)
-
 
     state = {
         map: map,
