@@ -46,16 +46,17 @@ async function createMap() {
 
 
     const resize_observer = new ResizeObserver(() => {
-        const cols = Math.ceil(map.canvas.clientWidth / map.tileProvider.width) + 2
-        const rows = Math.ceil(map.canvas.clientHeight / map.tileProvider.height) + 2
-        const w = cols * tiles.width
-        const h = rows * tiles.height
+        map.view.width = viewport.clientWidth
+        map.view.height = viewport.clientHeight
+
+        const w = (Math.ceil(map.view.width / map.tileProvider.width) + 2) * map.tileProvider.width
+        const h = (Math.ceil(map.view.height / map.tileProvider.height) + 2) * map.tileProvider.height
 
         if (w === map.canvas.width && h === map.canvas.height) return;
 
-        map.canvas.width = w
-        map.canvas.height = h
-        imJumpTo(map, map.state.x, map.state.y, map.state.z)
+        map.canvas.width = map.resCanvas.width = w
+        map.canvas.height = map.resCanvas.height = h
+        imInitLayer(map)
     })
     resize_observer.observe(viewport)
 
