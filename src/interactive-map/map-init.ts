@@ -35,8 +35,9 @@ async function createMap() {
 	const view = { x: 0, y: 0, width: viewport.clientWidth, height: viewport.clientHeight };
 	const map = createInteractiveMap(providers, view) ?? (() => { throw new Error("cant create map") })()
 
-	// it complains when I use for ([i, layer] of LAYERS.entries()), it complains for no reason!!
-	LAYERS.map((layer, i) => map.layers[i].canvas.style.opacity = String(layer.opacity));
+	for (const [i, layer] of LAYERS.entries()) {
+		map.layers[i].canvas.style.opacity = String(layer.opacity);
+	}
 
 	viewport.appendChild(map.root)
 
