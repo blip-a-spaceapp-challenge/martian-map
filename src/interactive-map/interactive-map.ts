@@ -86,6 +86,7 @@ function createInteractiveMap(providers: TileProvider[], view: View, clearDraw: 
 		view,
 		tileProvider: base,
 		clearDraw,
+		maxLevel: Math.max(...providers.map(p => p.maxLevel)),
 	};
 }
 
