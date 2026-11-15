@@ -60,7 +60,6 @@ async function createMap() {
 
 
     imJumpTo(map, 0, 0, 4)
-    imInitLayer(map)
 
 
     state = {
