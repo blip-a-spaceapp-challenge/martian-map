@@ -10,7 +10,7 @@ function applyTransform(map: InteractiveMap) {
     map.canvas.style.transform = `translate3d(${-px}px, ${-py}px, 0)`;
 }
 
-function bindControls(map: InteractiveMap, viewport: HTMLDivElement) {
+function bindControls(map: InteractiveMap, viewport: HTMLDivElement, onViewChange: () => void) {
     let dragging = false;
     let lastX = 0, lastY = 0;
     let pendingDx = 0, pendingDy = 0;
@@ -21,6 +21,7 @@ function bindControls(map: InteractiveMap, viewport: HTMLDivElement) {
         imSlide(map, pendingDx, pendingDy);
         pendingDx = pendingDy = 0;
         applyTransform(map);
+        onViewChange()
     };
 
     const endDrag = () => {
@@ -70,11 +71,12 @@ function bindControls(map: InteractiveMap, viewport: HTMLDivElement) {
         const ty = Math.floor(gy / tp.height);
 
         imJumpTo(map, tx, ty, z);
-        map.view.x = tp.width  + (gx - tx * tp.width);
-        map.view.y = tp.height + (gy - ty * tp.height);
+        map.view.x = tp.width + Math.round(gx - tx * tp.width)
+        map.view.y = tp.height + Math.round(gy - ty * tp.height)
         applyTransform(map);
+        onViewChange()
     }, { passive: false });
 }
 
-export { bindControls };
+export { bindControls, applyTransform };
 

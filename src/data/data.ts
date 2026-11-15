@@ -151,14 +151,6 @@ async function loadDatasets(): Promise<Datasets> {
 }
 
 
-
-async function testDatasets() {
-    const datasets = await loadDatasets()
-    console.log(datasets)
-}
-
-void testDatasets()
-
-export type { Point, Path, Region }
-export { pointsOf, parsePath, parseRegion }
+export type { Point, Path, Region, Location, Landing, Datasets }
+export { pointsOf, parsePath, parseRegion, loadDatasets, loadLanding, loadLocation }
 

@@ -1,10 +1,12 @@
-import { Path, Region } from "../data/data.ts"
+import { loadDatasets, Path, Region } from "../data/data.ts"
 import type { State, View, InteractiveMap, TileProvider } from "./interactive-map.ts"
 import { createInteractiveMap, imDrawCell, imInitLayer, imJumpTo, imSlide } from "./interactive-map.ts"
-import { bindControls } from "./map-controls.ts"
+import { applyTransform, bindControls } from "./map-controls.ts"
+import { createOverlay, shapesFrom } from "./map-overlay.ts"
+import { lonLatToWorld } from "./map-projection.ts"
 import { createCachedTileProviderFor } from "./mars-trek.ts"
 
-const ID = "Mars_Viking_MDIM21_ClrMosaic_global_232m"
+const ID = "curiosity_hirise_mosaic"
 
 type MapState = {
     map: InteractiveMap,
@@ -17,6 +19,7 @@ async function createMap() {
     const tiles = await createCachedTileProviderFor(ID, (x, y, z) => {
         console.log(`Tile ${x} ${y} ${z} loaded!`)
         if (state === undefined) return;
+        if (z !== state.map.state.z) return
         const i = x - state.map.state.x
         const j = y - state.map.state.y
         if (i < 0 || j < 0) return;
@@ -24,6 +27,10 @@ async function createMap() {
         if (j >= state.map.canvas.height / state.map.tileProvider.height) return;
         imDrawCell(state.map, i, j)
     })
+
+    const viewport = document.getElementById("viewport")
+    if (!(viewport instanceof HTMLDivElement)) throw new Error("no #viewport");
+
     const view = {
         x: 0,
         y: 0,
@@ -32,20 +39,20 @@ async function createMap() {
     }
     const map = createInteractiveMap(tiles, view) ?? (() => { throw new Error("cant create map") })()
 
-    
-    const viewport = document.getElementById("viewport")
-    if (!(viewport instanceof HTMLDivElement)) {
-        throw new Error("no #viewport")
-    }
+
+    map.canvas.classList.add("map-canvas")
     viewport.appendChild(map.canvas)
 
 
 
-    bindControls(map, viewport)
+    const overlay = createOverlay(map, viewport)
+    bindControls(map, viewport, overlay.redraw)
 
 
 
     const resize_observer = new ResizeObserver(() => {
+        overlay.resize()
+
         map.view.width = viewport.clientWidth
         map.view.height = viewport.clientHeight
 
@@ -60,14 +67,30 @@ async function createMap() {
     })
     resize_observer.observe(viewport)
 
-
-    imJumpTo(map, 0, 0, 4)
-
-
     state = {
         map: map,
         resize_observer: resize_observer
     }
+
+    const datasets = await loadDatasets()
+    console.log("Datasets are loaded")
+    overlay.setShapes(shapesFrom(datasets))
+
+    // start centered on landing A instead of the world's top-left corner
+    const pts = datasets.landingA.generalArea.points
+    const lon = pts.reduce((s, p) => s + p.longitude, 0) / pts.length
+    const lat = pts.reduce((s, p) => s + p.latitude, 0) / pts.length
+    const z = 5
+    const c = lonLatToWorld(tiles, lon, lat, z)
+    const gx = c.x - viewport.clientWidth / 2
+    const gy = c.y - viewport.clientHeight / 2
+    const tx = Math.floor(gx / tiles.width)
+    const ty = Math.floor(gy / tiles.height)
+    imJumpTo(map, tx, ty, z)
+    map.view.x = tiles.width + Math.round(gx - tx * tiles.width)
+    map.view.y = tiles.height + Math.round(gy - ty * tiles.height)
+    applyTransform(map)
+    overlay.redraw()
 }
 
 void createMap()
