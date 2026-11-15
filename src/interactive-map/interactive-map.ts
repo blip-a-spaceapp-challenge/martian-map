@@ -26,6 +26,7 @@ type InteractiveMap = {
 type TileProvider = {
 	width: number,
 	height: number,
+    maxLevel: number,
 	get: (x: number, y: number, z: number) => ImageBitmap | null,
 }
 
@@ -156,3 +157,9 @@ function imSlide(im: InteractiveMap, dx: number, dy: number) {
 
 	imGridShift(im, nx, ny);
 }
+
+
+
+export type { State, View, InteractiveMap, TileProvider };
+export { createInteractiveMap, imDrawCell, imJumpTo, imGridShift, imInitLayer, imSlide, intDiv };
+
