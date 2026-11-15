@@ -154,9 +154,11 @@ function imGridShift(im: InteractiveMap, nx: number, ny: number) {
 		return;
 	}
 
-	if (im.clearDraw) im.canvasCtx.globalCompositeOperation = "copy";
-	im.canvasCtx.drawImage(im.canvas, -nx * im.tileProvider.width, -ny * im.tileProvider.height);
-	if (im.clearDraw) im.canvasCtx.globalCompositeOperation = "source-over";
+	for (const { canvas, ctx } of im.layers) {
+		if (im.clearDraw) ctx.globalCompositeOperation = "copy";
+		ctx.drawImage(canvas, -nx * im.tileProvider.width, -ny * im.tileProvider.height);
+		if (im.clearDraw) ctx.globalCompositeOperation = "source-over";
+	}
 
 	for (let j = 0; j < rows; ++j) {
 		const oj = j + ny;
@@ -165,7 +167,7 @@ function imGridShift(im: InteractiveMap, nx: number, ny: number) {
 			const oi = i + nx;
 			const colIsNew = oi < 0 || oi >= cols;
 			if (rowIsNew || colIsNew) {
-				imDrawCell(im, i, j);
+				for (let l = 0; l < im.layers.length; ++l) imDrawCell(im, l, i, j);
 			}
 		}
 	}
