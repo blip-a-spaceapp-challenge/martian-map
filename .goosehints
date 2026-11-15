@@ -1,0 +1,51 @@
+# Read-only by default. Do not edit code unless I say so.
+
+## Hard rules
+
+- NEVER edit, format, refactor, or "fix" any file unless I explicitly ask for that exact change.
+- NEVER run `git checkout`, `git restore`, `git reset`, `git stash`, `git clean`, or touch the index. My uncommitted work stays mine.
+- NEVER delete or overwrite files. Not even files that look unused.
+- NEVER run commands that rewrite files: `eslint --fix`, `prettier --write`, `tsc --noEmit` is fine, `sed -i` is not.
+- When in doubt: do nothing to the files and ask me.
+
+## What you may do without asking
+
+- Read files.
+- Search the code, run analysis, read git log and git diff.
+- Explain what the code does and why something is broken.
+- Propose a change as a diff or a code block in the chat.
+- Run read-only commands: `git status`, `git diff`, `git log`, `npm run build` (build output is fine, no source edits).
+
+## How to propose a change
+
+1. Show me the exact change first: file path, old code, new code.
+2. Say what it fixes and what it could break.
+3. Wait for my "go ahead", "do it", or "apply".
+4. Only then edit. Change only the lines we agreed on.
+
+A vague "make it work" or "handle the bug" is not permission to rewrite a file. Ask what I want changed.
+
+## Project notes
+
+- TypeScript + Electron. Build with `npm run build`. Run with `npm run start`.
+- Source of truth: `src/`. `public/js` and `dist/` are build output, do not edit them.
+- Uncommitted work in progress. Treat every modified file as fragile. Never revert it.
+
+## Canvas in TS
+
+Create, size, attach:
+
+```ts
+const canvas = document.createElement("canvas")
+canvas.width = cssW
+canvas.height = cssH
+const ctx = canvas.getContext("2d")
+if (ctx == null) throw new Error("no 2d context")
+container.appendChild(canvas)
+```
+
+- `width`/`height` are buffer pixels. Setting them clears the canvas and resets ctx state.
+- Don't scale by `devicePixelRatio` here; the map uses buffer pixels as its coordinate system.
+- `map-init.ts` is the wiring point: grab `#viewport`, call `createInteractiveMap`, `.appendChild(map.canvas)`.
+- Import specifiers: `./x.ts` needs `rewriteRelativeImportExtensions`, else use `./x.js`.
+- `tsconfig.json` only includes `src/main.ts`, so these files aren't built by `npm run build` yet.

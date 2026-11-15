@@ -1,6 +1,10 @@
 # electronjs.org recommends placing a copy of GitHub's Node.js gitignore template
 # https://github.com/github/gitignore/blob/main/Node.gitignore
 
+# Emacs
+~*
+*~
+
 # Logs
 logs
 *.log
@@ -158,3 +162,5 @@ vite.config.ts.timestamp-*
 .nx/cache
 .nx/workspace-data
 .nx/migrate-runs
+
+public/js
